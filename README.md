@@ -31,9 +31,9 @@ Settings → Battery → Background usage limits → Never sleeping apps, so ref
 
 Design spec: `docs/design/widgets-spec.html`.
 
-## Widget lab (debug builds)
+## Widget lab
 
-The home screen has a **Widget lab** button. It renders every widget size through the
+AMN's home screen has a **Widget lab** button (debug and release builds). It renders every widget size through the
 real preview (inflated like a launcher does), with overrides for condition, hour, dark mode,
 units, 12/24h, seconds and clock city. Open it in any state from the command line:
 

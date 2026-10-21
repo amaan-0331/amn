@@ -73,7 +73,7 @@ data class WeatherState(
 )
 
 /** Widget lab overrides (debug builds). [condition] is ignored by the clock. */
-data class WidgetDebug(val condition: dev.amaan.amn.widgets.core.Condition, val hour: Int)
+data class WidgetDebug(val condition: dev.amaan.amn.widgets.core.Condition, val hour: Int, val h24: Boolean? = null)
 
 /** Clock preview state: unsaved settings, plus optional lab overrides. */
 data class ClockPreview(val settings: ClockSettings, val debug: WidgetDebug? = null)

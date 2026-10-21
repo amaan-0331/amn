@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'ui.dart';
 
-/// Debug-only page that renders every widget size through the real preview,
+/// Page that renders every widget size through the real preview,
 /// with overrides for condition, hour, dark mode and units.
 ///
 /// Open it from the command line with any state, for example:
@@ -39,6 +39,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   Map<String, Object?> get _debug => {
         'condition': _condition,
         'hour': _hour.round(),
+        'h24': _h24,
         if (_dark != null) 'dark': _dark,
       };
 

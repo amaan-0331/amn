@@ -5,7 +5,7 @@ import 'lab_page.dart';
 import 'weather_page.dart';
 
 /// Handles `/widget/weather?id=..&mode=add|edit` and `/widget/clock?...`,
-/// which `WidgetConfigActivity` opens, and the debug-only `/widget/lab`.
+/// which `WidgetConfigActivity` opens, and the widget lab at `/widget/lab`.
 /// Returns null for any other route.
 Route<void>? widgetConfigRoute(RouteSettings settings) {
   final uri = Uri.tryParse(settings.name ?? '');

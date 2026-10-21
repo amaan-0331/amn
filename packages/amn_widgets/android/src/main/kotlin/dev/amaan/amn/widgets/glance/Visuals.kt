@@ -43,6 +43,37 @@ internal object Art {
 }
 
 /**
+ * Art that runs off the widget's top-right corner, as in the design. Glance can't place an
+ * image past a widget's bounds, so the visible part is cropped here: [bleedRight] and
+ * [bleedTop] are how many dp of a [size] dp image fall outside.
+ */
+internal object Bleed {
+    private val cache = object : android.util.LruCache<String, Bitmap>(24) {}
+
+    fun crop(context: Context, resId: Int, size: Float, bleedRight: Float, bleedTop: Float): Bitmap {
+        val key = "$resId|$size|$bleedRight|$bleedTop"
+        cache.get(key)?.let { return it }
+        val full = android.graphics.BitmapFactory.decodeResource(context.resources, resId)
+        val x1 = (full.width * (1 - bleedRight / size)).toInt().coerceIn(1, full.width)
+        val y0 = (full.height * (bleedTop / size)).toInt().coerceIn(0, full.height - 1)
+        return Bitmap.createBitmap(full, 0, y0, x1, full.height - y0).also { cache.put(key, it) }
+    }
+}
+
+/** A [size] dp art image whose right and top edges may run off the widget. */
+@Composable
+internal fun BleedArt(resId: Int, size: Float, bleedRight: Float = 0f, bleedTop: Float = 0f, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val bmp = Bleed.crop(context, resId, size, bleedRight, bleedTop)
+    androidx.glance.Image(
+        provider = androidx.glance.ImageProvider(bmp),
+        contentDescription = null,
+        modifier = modifier.width((size - bleedRight).dp).height((size - bleedTop).dp),
+        contentScale = androidx.glance.layout.ContentScale.FillBounds,
+    )
+}
+
+/**
  * The top part of an art image, for a sun sitting on the bottom edge (dawn and dusk).
  * Glance can't place an image past a widget's bounds, so the crop is made here.
  */
@@ -123,13 +154,17 @@ internal object Numerals {
             textSize = px
             this.color = color
         }
-        // Height from the digits' ink (so every number lines up), width from the text's advance.
-        val digits = android.graphics.Rect().also { paint.getTextBounds("0123456789", 0, 10, it) }
-        val pad = (px * .04f).toInt().coerceAtLeast(1)
-        val width = paint.measureText(text).toInt().coerceAtLeast(1) + pad * 2
-        val height = digits.height() + pad * 2
+        // Height from the digits' ink (so every number lines up), stretched to fit the degree sign
+        // and minus sign when they reach further; width from the text's advance.
+        val ink = android.graphics.Rect().also { paint.getTextBounds("0123456789", 0, 10, it) }
+        val own = android.graphics.Rect().also { paint.getTextBounds(text, 0, text.length, it) }
+        val top = minOf(ink.top, own.top)
+        val bottom = maxOf(ink.bottom, own.bottom)
+        val pad = (px * .06f).toInt().coerceAtLeast(2)
+        val width = maxOf(paint.measureText(text).toInt(), own.right) + pad * 2
+        val height = bottom - top + pad * 2
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        Canvas(bmp).drawText(text, pad.toFloat(), (pad - digits.top).toFloat(), paint)
+        Canvas(bmp).drawText(text, pad.toFloat(), (pad - top).toFloat(), paint)
         cache.put(key, bmp)
         return bmp
     }

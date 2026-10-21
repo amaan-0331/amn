@@ -146,7 +146,8 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
             val sun = Horizon.topHalf(context, Art.drawable(Condition.CLEAR, phase))
             Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8).dp).height((artSize * .8 * .55).dp))
         } else {
-            Image(ImageProvider(Art.drawable(Condition.CLEAR, phase)), null, GlanceModifier.size(artSize.dp))
+            // Runs off the top-right corner by a fifth, as in the design.
+            BleedArt(Art.drawable(Condition.CLEAR, phase), artSize.toFloat(), bleedRight = artSize * .2f, bleedTop = artSize * .2f)
         }
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 12.dp, vertical = if (square) 10.dp else 7.dp)) {
             val title = s.cityName ?: "Choose a city"

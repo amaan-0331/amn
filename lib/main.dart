@@ -52,6 +52,11 @@ class HomePage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed('/widget/lab'),
+                child: const Text('Widget lab'),
+              ),
             ],
           ),
         ),

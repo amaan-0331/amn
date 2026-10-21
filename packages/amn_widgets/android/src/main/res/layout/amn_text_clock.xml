@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Live time for the widgets. Ticks on its own, so the widget never needs per-minute updates.
-     TODO: switch fontFamily to @font/barlow_condensed_bold once the font is bundled. -->
+     Launchers inflate widgets with a restricted context, which ignores @font resources,
+     so this uses the system's condensed face. Static numbers are drawn as bitmaps instead. -->
 <TextClock xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/amn_clock"
     android:layout_width="wrap_content"

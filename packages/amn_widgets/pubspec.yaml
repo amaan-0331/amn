@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -32,6 +34,11 @@ flutter:
   # This is required for using `dart:ffi`.
   # All these are used by the tooling to maintain consistency when
   # adding or updating assets for this project.
+  fonts:
+    - family: BarlowCondensed
+      fonts:
+        - asset: assets/fonts/BarlowCondensed-Bold.ttf
+          weight: 700
   plugin:
     platforms:
       android:

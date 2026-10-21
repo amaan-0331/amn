@@ -1,0 +1,874 @@
+<title>AMN Widgets</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=Roboto+Flex:opsz,wght@8..144,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: masthead, then a two-column playground (controls | phone home screen), then a single-column spec with a section index. */
+:root{
+  --bg:#ECEEF3; --surface:#FFFFFF; --surface-2:#F4F5F8; --ink:#10131B; --muted:#535B6D; --line:#D5D9E2;
+  --accent:#C2410C; --accent-ink:#FFFFFF; --accent-soft:#FBE6DC;
+  --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-widget:'Roboto Flex',Roboto,system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --u:1.28px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C0E14; --surface:#151821; --surface-2:#1B1F2A; --ink:#ECEEF4; --muted:#9CA3B4; --line:#282D3A;
+  --accent:#FF7A45; --accent-ink:#1A0A03; --accent-soft:#3A1F14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C0E14; --surface:#151821; --surface-2:#1B1F2A; --ink:#ECEEF4; --muted:#9CA3B4; --line:#282D3A;
+  --accent:#FF7A45; --accent-ink:#1A0A03; --accent-soft:#3A1F14; color-scheme:dark}
+@media (max-width:560px){:root{--u:1.06px}}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:1;text-wrap:balance;margin:0}
+h1{font-size:clamp(48px,9vw,96px);letter-spacing:-.01em;text-transform:uppercase}
+h2{font-size:clamp(30px,4.4vw,42px);text-transform:uppercase;letter-spacing:.005em}
+h3{font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+p{margin:0;max-width:68ch}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.mast{display:grid;gap:14px;padding-block:40px 28px}
+.mast .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mast p{color:var(--muted);font-size:17px}
+
+/* Playground */
+.play{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:980px){.play{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:18px}
+.ctl{display:grid;gap:8px}
+.ctl > label,.ctl .lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.conds button{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"],.conds button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.conds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.conds button{display:flex;align-items:center;gap:8px;border-radius:12px;padding:5px 10px 5px 6px;text-align:left}
+.conds .ic{width:26px;height:26px;flex:none}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:7px 10px;width:100%}
+.hourval{font-family:var(--f-mono);font-size:13px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.stage{display:grid;gap:16px;min-width:0}
+.phone{border-radius:28px;padding:22px 18px;display:grid;gap:18px;transition:background .4s}
+.phone.light,.band.light{background:radial-gradient(120% 90% at 0% 0%,#C3D3F2 0%,transparent 60%),radial-gradient(90% 80% at 100% 100%,#F1CFA9 0%,transparent 60%),#E2D6E4}
+.phone.dark,.band.dark{background:radial-gradient(120% 90% at 0% 0%,#1D2742 0%,transparent 60%),radial-gradient(90% 80% at 100% 100%,#3A2618 0%,transparent 60%),#1A1722}
+.row-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#FFFFFF;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+.home{display:flex;flex-wrap:wrap;gap:18px 16px;align-items:flex-start}
+.slot{margin:0;display:grid;gap:7px;justify-items:start}
+.slot figcaption:empty{display:none}
+.slot figcaption{font-family:var(--f-mono);font-size:11px;color:#FFFFFF;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.readout .panel{gap:6px;padding:14px 16px}
+.readout .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.readout .v{font-size:15px}
+.readout .big{font-family:var(--f-display);font-size:28px;font-weight:700;line-height:1.05}
+
+/* Widget (dimensions in dp via --u) */
+.w{position:relative;overflow:hidden;flex:none;border-radius:calc(var(--u)*24);background:linear-gradient(165deg,var(--top),var(--bot));color:var(--ink-w);font-family:var(--f-widget);line-height:1.15;box-shadow:0 calc(var(--u)*5) calc(var(--u)*16) rgba(8,10,20,.24)}
+.w .art{position:absolute;pointer-events:none}
+.w .in{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0}
+.w .num{font-family:var(--f-display);font-weight:700;line-height:.84;letter-spacing:-.005em;font-variant-numeric:tabular-nums}
+.w .meta{display:flex;align-items:center;gap:calc(var(--u)*3);font-weight:500;white-space:nowrap;min-width:0}
+.w .meta b{font-weight:750}
+.w .ico{width:1.05em;height:1.05em;flex:none}
+.w .tm .ap{margin-left:.25em;font-size:.82em}
+.w .sum{font-weight:800;letter-spacing:-.005em;line-height:1.1}
+.w .hilo{font-weight:600}
+.w .chip{align-self:flex-start;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;border-radius:999px;background:color-mix(in srgb,var(--ink-w) 15%,transparent)}
+.w .strip{display:grid;align-items:center}
+.w .strip.panel-w{border-radius:calc(var(--u)*14);background:color-mix(in srgb,var(--ink-w) 11%,transparent);padding:calc(var(--u)*4) calc(var(--u)*2)}
+.w .hr{display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*1.5)}
+.w .hl{font-size:calc(var(--u)*9.5);font-weight:600;white-space:nowrap}
+.w .pp{font-size:calc(var(--u)*9.5);font-weight:750}
+.w .mini{display:block;flex:none}
+.w .days{display:grid;gap:calc(var(--u)*3)}
+.w .day{display:grid;grid-template-columns:calc(var(--u)*58) calc(var(--u)*18) calc(var(--u)*28) calc(var(--u)*24) 1fr calc(var(--u)*24);align-items:center;gap:calc(var(--u)*6);font-weight:600}
+.w .day .num{font-size:calc(var(--u)*15);text-align:right}
+.w .day .dp{font-size:.88em;font-weight:750}
+.w .bar{position:relative;height:calc(var(--u)*5);border-radius:99px;background:color-mix(in srgb,var(--ink-w) 18%,transparent)}
+.w .bar i{position:absolute;top:0;bottom:0;border-radius:99px;background:var(--ink-w)}
+.w .upd{font-size:calc(var(--u)*10);font-weight:500;display:flex;align-items:center;gap:calc(var(--u)*3);white-space:nowrap}
+.w .prow{display:flex;align-items:center;gap:calc(var(--u)*4);font-weight:600}
+
+/* Spec */
+.spec{display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;margin-top:72px}
+@media (max-width:980px){.spec{grid-template-columns:minmax(0,1fr);gap:24px}}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:4px;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none;padding:3px 0}
+.toc a:hover{color:var(--ink)}
+.toc .t{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+@media (max-width:980px){.toc{position:static;display:flex;flex-wrap:wrap;gap:6px 14px}.toc .t{width:100%}}
+.sec{display:grid;gap:16px;padding-block:28px;border-top:1px solid var(--line);min-width:0}
+.sec:first-child{border-top:0;padding-top:0}
+.sec ul{margin:0;padding-left:20px;max-width:68ch;display:grid;gap:6px}
+.note{background:var(--accent-soft);border-radius:14px;padding:14px 16px;max-width:72ch}
+.note b{color:var(--accent)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;background:var(--surface-2);white-space:nowrap}
+td.n{font-family:var(--f-mono);font-size:13px;white-space:nowrap}
+pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6}
+.dl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:8px 18px;max-width:780px}
+.dl dt{font-weight:700}
+.dl dd{margin:0;color:var(--muted)}
+@media (max-width:560px){.dl{grid-template-columns:minmax(0,1fr)}.dl dd{margin-bottom:8px}}
+
+.mtx{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:20px}
+.mgrid{display:grid;grid-template-columns:76px repeat(4,minmax(0,1fr));gap:5px;align-items:center}
+.mgrid .h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sw{height:58px;border-radius:12px;display:flex;flex-direction:column;justify-content:space-between;padding:6px 8px}
+.sw .num{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:.9}
+.sw .r{font-family:var(--f-mono);font-size:10px}
+/* Edit pages (phone screens, sizes in dp via --s) */
+.edit{display:grid;gap:22px;margin-top:64px}
+.edit-head{display:grid;gap:12px}
+.edit-head p{color:var(--muted)}
+.screens{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.scrwrap{margin:0;display:grid;gap:10px;justify-items:center;min-width:0}
+.scrwrap figcaption{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.scr{--s:1.06px;--u:var(--s);position:relative;width:calc(var(--s)*360);max-width:100%;border-radius:calc(var(--s)*38);overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f-widget);font-size:calc(var(--s)*14.5);line-height:1.35;border:calc(var(--s)*7) solid #0B0C10;box-shadow:0 18px 40px rgba(8,10,20,.22)}
+@media (max-width:560px){.scr{--s:calc((100vw - 48px)/374)}}
+.scr.light{--bg:#F3F4F8;--surface:#FFFFFF;--surface-2:#E8EAF0;--ink:#10131B;--muted:#596072;--line:#E1E4EB;--accent:#C2410C;--accent-ink:#FFFFFF;--accent-soft:#FBE6DC}
+.scr.dark{--bg:#0E1016;--surface:#181B24;--surface-2:#252937;--ink:#ECEEF4;--muted:#9CA3B4;--line:#2A2F3C;--accent:#FF7A45;--accent-ink:#1A0A03;--accent-soft:#3A1F14}
+.scr .sb{display:flex;justify-content:space-between;align-items:center;padding:calc(var(--s)*10) calc(var(--s)*24) calc(var(--s)*2);font-size:calc(var(--s)*13);font-weight:600}
+.scr .sb svg{height:calc(var(--s)*12)}
+.scr .bar{display:flex;align-items:center;gap:calc(var(--s)*4);padding:calc(var(--s)*6) calc(var(--s)*12) calc(var(--s)*10) calc(var(--s)*6)}
+.scr .ib{width:calc(var(--s)*44);height:calc(var(--s)*44);border-radius:50%;border:0;background:transparent;color:inherit;display:grid;place-items:center;cursor:pointer;flex:none}
+.scr .ib svg{width:calc(var(--s)*24);height:calc(var(--s)*24)}
+.scr .ttl{font-family:var(--f-display);font-weight:800;font-size:calc(var(--s)*28);text-transform:uppercase;letter-spacing:.01em;line-height:1}
+.scr .band{margin:0 calc(var(--s)*12);border-radius:calc(var(--s)*28);padding:calc(var(--s)*22) calc(var(--s)*12) calc(var(--s)*14);display:grid;justify-items:center;gap:calc(var(--s)*14)}
+.scr .prev{display:grid;place-items:center;min-height:calc(var(--s)*140)}
+.scr .band .seg{justify-content:center;gap:calc(var(--s)*6)}
+.scr .band .seg button{font-size:calc(var(--s)*12.5);padding:calc(var(--s)*5) calc(var(--s)*11);border-color:transparent}
+.scr .band.light .seg button{background:rgba(255,255,255,.78);color:#10131B}
+.scr .band.dark .seg button{background:rgba(16,18,26,.72);color:#ECEEF4}
+.scr .band .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.scr .body{display:grid;gap:calc(var(--s)*20);padding:calc(var(--s)*20) calc(var(--s)*16) calc(var(--s)*6)}
+.scr .grp{display:grid;gap:calc(var(--s)*8)}
+.scr .gl{font-size:calc(var(--s)*12);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-left:calc(var(--s)*6)}
+.scr .card,.scr .list{background:var(--surface);border-radius:calc(var(--s)*20);overflow:hidden}
+.scr .card{padding:0 calc(var(--s)*14)}
+.scr .row{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--s)*12);min-height:calc(var(--s)*58);padding-block:calc(var(--s)*8);border-bottom:1px solid var(--line)}
+.scr .row:last-child{border-bottom:0}
+.scr .grow{flex:1;min-width:0}
+.scr b{font-weight:650}
+.scr small{display:block;font-size:calc(var(--s)*12.5);color:var(--muted);font-weight:400;line-height:1.3}
+.scr .lead{width:calc(var(--s)*36);height:calc(var(--s)*36);border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.scr .lead svg{width:calc(var(--s)*18);height:calc(var(--s)*18)}
+.scr .seg button{font-size:calc(var(--s)*13);padding:calc(var(--s)*6) calc(var(--s)*13)}
+.scr .seg2{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:999px;padding:calc(var(--s)*4)}
+.scr .seg2 button{font:inherit;font-size:calc(var(--s)*14);font-weight:650;border:0;border-radius:999px;padding:calc(var(--s)*10) calc(var(--s)*6);background:transparent;color:var(--muted);cursor:pointer}
+.scr .seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.16)}
+.scr .search{display:flex;align-items:center;gap:calc(var(--s)*10);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 calc(var(--s)*16);height:calc(var(--s)*50)}
+.scr .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.scr .search svg{width:calc(var(--s)*20);height:calc(var(--s)*20);color:var(--muted);flex:none}
+.scr .search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink);outline:none}
+.scr .search input::placeholder{color:var(--muted)}
+.scr .li{display:flex;align-items:center;gap:calc(var(--s)*12);width:100%;text-align:left;font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid var(--line);padding:calc(var(--s)*10) calc(var(--s)*14);cursor:pointer}
+.scr .li:last-child{border-bottom:0}
+.scr .li[aria-pressed="true"]{background:var(--accent-soft)}
+.scr .li b{display:block}
+.scr .rt{text-align:right;font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap}
+.scr .rt .ap,.scr .selt .ap{margin-left:.25em;font-size:.8em}
+.scr .chk{width:calc(var(--s)*20);height:calc(var(--s)*20);color:var(--accent);flex:none}
+.scr .empty{padding:calc(var(--s)*14);color:var(--muted);font-size:calc(var(--s)*13.5)}
+.scr .selname{font-family:var(--f-display);font-weight:800;font-size:calc(var(--s)*26);text-transform:uppercase;line-height:1}
+.scr .selt{font-family:var(--f-display);font-weight:700;font-size:calc(var(--s)*26);line-height:1;text-align:right;font-variant-numeric:tabular-nums}
+.scr .sw2{width:calc(var(--s)*52);height:calc(var(--s)*32);border-radius:999px;border:0;background:var(--surface-2);position:relative;cursor:pointer;flex:none}
+.scr .sw2::after{content:"";position:absolute;top:calc(var(--s)*6);left:calc(var(--s)*6);width:calc(var(--s)*20);height:calc(var(--s)*20);border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
+.scr .sw2[aria-checked="true"]{background:var(--accent)}
+.scr .sw2[aria-checked="true"]::after{transform:translateX(calc(var(--s)*20));background:var(--accent-ink)}
+.scr .tb{border:0;background:transparent;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:calc(var(--s)*8);flex:none}
+.scr .foot{padding:calc(var(--s)*14) calc(var(--s)*16) calc(var(--s)*22)}
+.scr .cta{width:100%;height:calc(var(--s)*56);border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:calc(var(--s)*16);font-weight:750;cursor:pointer}
+.scr .snack{position:absolute;left:calc(var(--s)*16);right:calc(var(--s)*16);bottom:calc(var(--s)*94);background:var(--ink);color:var(--bg);border-radius:calc(var(--s)*12);padding:calc(var(--s)*13) calc(var(--s)*16);font-size:calc(var(--s)*14);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">AMN · Design spec · Jetpack Glance · Samsung One UI</div>
+    <h1>AMN Widgets</h1>
+    <p>The weather and clock widgets for AMN, my personal toolbox app. They are built for my Samsung phone; the code is public, with no ads. Colors follow the sky, numbers are big and condensed, and a single line tells you what changed. Use the controls to step through conditions, times of day and settings. The full build spec is further down.</p>
+  </header>
+
+  <section class="play" id="play" aria-label="Interactive mockups">
+    <div class="panel" id="controls">
+      <div class="ctl"><span class="lbl">Condition now</span><div class="conds" id="conds"></div></div>
+      <div class="ctl"><label for="hour">Time of day (your time)</label><input type="range" id="hour" min="0" max="23" step="1"><span class="hourval" id="hourval"></span></div>
+      <div class="ctl"><span class="lbl">Phone theme</span><div class="seg"><button data-k="dark" data-v="false">Light</button><button data-k="dark" data-v="true">Dark</button></div></div>
+      <div class="split">
+        <div class="ctl"><span class="lbl">Temperature</span><div class="seg"><button data-k="tUnit" data-v="C">°C</button><button data-k="tUnit" data-v="F">°F</button></div></div>
+        <div class="ctl"><span class="lbl">Precipitation</span><div class="seg"><button data-k="pUnit" data-v="mm">mm</button><button data-k="pUnit" data-v="in">in</button></div></div>
+      </div>
+      <div class="split">
+        <div class="ctl"><span class="lbl">Weather location</span><div class="seg"><button data-k="loc" data-v="gps">GPS</button><button data-k="loc" data-v="pin">Pinned</button></div></div>
+        <div class="ctl"><span class="lbl">Weather data</span><div class="seg"><button data-k="stale" data-v="false">Fresh</button><button data-k="stale" data-v="true">Stale</button></div></div>
+      </div>
+      <div class="ctl"><label for="city">Clock city</label><select id="city"></select></div>
+      <div class="split">
+        <div class="ctl"><span class="lbl">Clock format</span><div class="seg"><button data-k="h24" data-v="true">24h</button><button data-k="h24" data-v="false">12h</button></div></div>
+        <div class="ctl"><span class="lbl">Seconds</span><div class="seg"><button data-k="secs" data-v="false">Off</button><button data-k="secs" data-v="true">On</button></div></div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" id="phone">
+        <div class="row-h">Weather (sample data)</div>
+        <div class="home" id="wx"></div>
+        <div class="row-h">Clock</div>
+        <div class="home" id="ck"></div>
+      </div>
+      <div class="readout">
+        <div class="panel"><span class="k">Summary line</span><span class="big" id="sumText"></span><span class="v" id="sumRule"></span></div>
+        <div class="panel"><span class="k">TalkBack reads (weather)</span><span class="v" id="tbW"></span></div>
+        <div class="panel"><span class="k">TalkBack reads (clock)</span><span class="v" id="tbC"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="edit" id="edit" aria-labelledby="editH">
+    <div class="edit-head">
+      <h2 id="editH">Edit pages</h2>
+      <p>Each widget has one page in AMN. It opens when you add the widget, when you tap it, and from the widget's long-press Settings. Changes show in the preview straight away. These screens share settings with the mockups above, so changing one updates the other.</p>
+      <div class="ctl"><span class="lbl">Page opened by</span><div class="seg"><button data-k="mode" data-v="add">Adding the widget</button><button data-k="mode" data-v="edit">Tapping the widget</button></div></div>
+    </div>
+    <div class="screens">
+      <figure class="scrwrap">
+        <div class="scr" id="scrW">
+          <div class="sb"><span data-t="hm"></span><svg viewBox="0 0 44 14" aria-hidden="true"><rect x="0" y="8" width="3" height="6" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="9" rx="1" fill="currentColor"/><rect x="10" y="2" width="3" height="12" rx="1" fill="currentColor"/><rect x="20" y="2" width="20" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="22.5" y="4.5" width="13" height="6" rx="1.5" fill="currentColor"/><rect x="41" y="5.5" width="2" height="4" rx="1" fill="currentColor"/></svg></div>
+          <div class="bar"><button class="ib" id="wBack"></button><h3 class="ttl" id="wTitle"></h3></div>
+          <div class="band"><div class="prev" id="wPrev"></div>
+            <div class="seg" role="group" aria-label="Preview size"><button data-k="wsize" data-v="s21">2×1</button><button data-k="wsize" data-v="s22">2×2</button><button data-k="wsize" data-v="m42">4×2</button><button data-k="wsize" data-v="l43">4×3</button><button data-k="wsize" data-v="l44">4×4</button></div></div>
+          <div class="body">
+            <div class="grp"><div class="gl">Location</div>
+              <div class="seg2" role="group" aria-label="Location"><button data-k="loc" data-v="gps">Current location</button><button data-k="loc" data-v="pin">Choose a city</button></div>
+              <div class="card" id="wGps"><div class="row"><span class="lead"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7z" fill="currentColor"/></svg></span><span class="grow"><b>Berlin</b><small>Found by GPS · approximate location, allowed all the time</small></span></div></div>
+              <div class="grp" id="wPick"><label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" fill="currentColor"/></svg><input id="wq" type="search" placeholder="Search for a city" autocomplete="off" aria-label="Search for a city"></label><div class="list" id="wList"></div></div>
+            </div>
+            <div class="grp"><div class="gl">Units · all weather widgets</div>
+              <div class="card">
+                <div class="row"><span class="grow"><b>Temperature</b></span><div class="seg"><button data-k="tUnit" data-v="C">°C</button><button data-k="tUnit" data-v="F">°F</button></div></div>
+                <div class="row"><span class="grow"><b>Rain and snow</b><small>Snow shows in cm or in</small></span><div class="seg"><button data-k="pUnit" data-v="mm">mm</button><button data-k="pUnit" data-v="in">in</button></div></div>
+              </div></div>
+            <div class="grp" id="wData"><div class="gl">Data</div>
+              <div class="card"><div class="row"><span class="grow"><b id="wUpd"></b><small>Refreshes about every 30 minutes · Open-Meteo</small></span><button class="tb" id="wRefresh">Refresh now</button></div></div></div>
+          </div>
+          <div class="foot"><button class="cta" id="wBtn"></button></div>
+          <div class="snack" id="wSnack" role="status" hidden></div>
+        </div>
+        <figcaption>Weather widget page</figcaption>
+      </figure>
+      <figure class="scrwrap">
+        <div class="scr" id="scrC">
+          <div class="sb"><span data-t="hm"></span><svg viewBox="0 0 44 14" aria-hidden="true"><rect x="0" y="8" width="3" height="6" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="9" rx="1" fill="currentColor"/><rect x="10" y="2" width="3" height="12" rx="1" fill="currentColor"/><rect x="20" y="2" width="20" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="22.5" y="4.5" width="13" height="6" rx="1.5" fill="currentColor"/><rect x="41" y="5.5" width="2" height="4" rx="1" fill="currentColor"/></svg></div>
+          <div class="bar"><button class="ib" id="cBack"></button><h3 class="ttl" id="cTitle"></h3></div>
+          <div class="band"><div class="prev" id="cPrev"></div>
+            <div class="seg" role="group" aria-label="Preview size"><button data-k="csize" data-v="c11">1×1</button><button data-k="csize" data-v="c21">2×1</button><button data-k="csize" data-v="c22">2×2</button></div></div>
+          <div class="body">
+            <div class="grp"><div class="gl">City</div>
+              <div class="card" id="cSel"></div>
+              <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" fill="currentColor"/></svg><input id="cq" type="search" placeholder="Search for a city or country" autocomplete="off" aria-label="Search for a city or country"></label>
+              <div class="list" id="cList"></div>
+            </div>
+            <div class="grp"><div class="gl">Format</div>
+              <div class="card">
+                <div class="row"><span class="grow"><b>Time format</b><small>Starts from your phone's setting</small></span><div class="seg"><button data-k="h24" data-v="true">24h</button><button data-k="h24" data-v="false">12h</button></div></div>
+                <div class="row"><span class="grow"><b>Show seconds</b><small>2×1 and 2×2 only · uses a little more battery</small></span><button class="sw2" id="cSecs" role="switch" aria-label="Show seconds"></button></div>
+              </div></div>
+          </div>
+          <div class="foot"><button class="cta" id="cBtn"></button></div>
+          <div class="snack" id="cSnack" role="status" hidden></div>
+        </div>
+        <figcaption>Clock widget page</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <div class="spec">
+    <nav class="toc" aria-label="Spec sections">
+      <span class="t">Spec</span>
+      <a href="#brief">Brief</a><a href="#color">Color</a><a href="#type">Type</a><a href="#art">Illustration</a><a href="#sizes">Sizes</a><a href="#summary">Summary line</a><a href="#data">Data</a><a href="#behavior">Behavior</a><a href="#editspec">Edit pages</a><a href="#arch">Architecture</a><a href="#glance">Building in Glance</a><a href="#a11y">Accessibility</a><a href="#open">Open items</a>
+    </nav>
+    <main>
+      <section class="sec" id="brief">
+        <h2>Brief</h2>
+        <dl class="dl">
+          <dt>Home</dt><dd>Part of AMN, a personal toolbox app. Built for one Samsung phone running One UI on Android 14 or later. The code is public on GitHub, but there is no compatibility work for other phones, older Android versions or F-Droid.</dd>
+          <dt>Architecture</dt><dd>A Flutter app (<code>dev.amaan.amn</code>) for the shell, the in-app tools and the edit pages. The widgets, weather fetching and all the rules are native Kotlin inside <code>android/</code>. Android widgets only for now.</dd>
+          <dt>Look</dt><dd>Expressive and bold. Soft 3D illustrations on saturated sky gradients. Both widgets share type, shapes and color logic.</dd>
+          <dt>Color</dt><dd>Weather: driven by the current condition and time of day. Clock: driven by the time of day in the chosen city. Both get darker versions when the phone is in dark mode.</dd>
+          <dt>Type</dt><dd>Condensed display numerals (Barlow Condensed Bold, OFL). Labels in the system sans.</dd>
+          <dt>Weather content</dt><dd>City, current time, temperature, condition, summary line, high/low, feels-like, chance and amount of precipitation, hourly strip, 3-day outlook.</dd>
+          <dt>Clock content</dt><dd>Digital time for one chosen city, city name, time difference from you, day/night. 12/24h and seconds are settings.</dd>
+          <dt>Data</dt><dd>Open-Meteo, refreshed about every 30 minutes. Units are set separately for temperature and precipitation.</dd>
+          <dt>Tap</dt><dd>Opens that widget's edit page. AMN has no other screens for now.</dd>
+        </dl>
+      </section>
+
+      <section class="sec" id="color">
+        <h2>Color</h2>
+        <p>Each widget state has one background gradient (top-left to bottom-right) and one text color. The weather widget uses its condition's row. The clock uses the Clear row, so the two widgets match when the sky is clear. Every number below is the worst-case contrast of the text against either end of the gradient, computed live from the same rule the app will use.</p>
+        <div class="mtx" id="matrix"></div>
+        <ul>
+          <li><b>Time of day.</b> Dawn runs from 30 min before to 60 min after sunrise, dusk from 60 min before to 30 min after sunset. Night is after dusk until dawn. (The mockup uses fixed hours: dawn 06–08, day 08–17, dusk 17–19.)</li>
+          <li><b>Dawn and dusk.</b> Clear has hand-picked dawn and dusk gradients. Other conditions mix their day gradient toward the Clear dawn/dusk colors (38% dawn, 35–45% dusk).</li>
+          <li><b>Dark mode.</b> Night gradients stay as they are. Dawn, day and dusk gradients mix toward <code>#0A0C15</code> (55% top, 62% bottom).</li>
+          <li><b>Text color.</b> Use the state's preferred text color if it reaches 4.5:1 against both ends of the gradient. Otherwise pick the light or dark text color that scores higher. If that still misses 4.5:1, push both gradient stops 8% away from the text color, and repeat until it passes.</li>
+          <li><b>Secondary text</b> keeps the same color at a lighter weight. Never use transparency for text. Chips and the hourly panel fill with the text color at 15% and 11%.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="type">
+        <h2>Type</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>Role</th><th>Face</th><th>Sizes</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Temperature</td><td>Barlow Condensed Bold</td><td class="n">34 / 60 / 52 / 68 dp</td><td>2×1 / 2×2 / 4×2 / 4×3–4×4. Fixed dp so the layout holds at large font scales.</td></tr>
+            <tr><td>Clock time</td><td>Barlow Condensed Bold</td><td class="n">28 / 38 / 54 dp</td><td>1×1 / 2×1 / 2×2. Tabular figures so the time doesn't shift as it changes. Seconds at 40% of the time size.</td></tr>
+            <tr><td>Hourly and daily temperatures</td><td>Barlow Condensed Bold</td><td class="n">13–15 dp</td><td></td></tr>
+            <tr><td>Summary line</td><td>System sans, weight 800</td><td class="n">11.5 / 12 / 14 / 18 sp</td><td>One line. Ellipsize at small sizes.</td></tr>
+            <tr><td>City, time, labels</td><td>System sans, weight 500–750</td><td class="n">9.5–15 sp</td><td>City bold, time regular, on one line.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Barlow Condensed is SIL OFL, so it can ship in an open-source app. Bundle only the Bold weight with Latin and Latin-Extended digits and symbols (about 40 KB).</p>
+      </section>
+
+      <section class="sec" id="art">
+        <h2>Illustration</h2>
+        <p>The art is Microsoft's <a href="https://github.com/microsoft/fluentui-emoji">Fluent Emoji</a> in its 3D style, under the MIT license. Credit it in the repo README and AMN's About screen: "Weather icons: Fluent Emoji © Microsoft, MIT License". Keep a copy of its license file next to the images.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>File</th><th>Used for</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="n">clear-day.png</td><td>Clear (day, dawn, dusk), clock by day</td><td>Sun</td></tr>
+            <tr><td class="n">clear-night.png</td><td>Clear at night, clock at night</td><td>Crescent moon</td></tr>
+            <tr><td class="n">partly-day.png</td><td>Partly cloudy (day)</td><td>Sun behind cloud</td></tr>
+            <tr><td class="n">partly-night.png</td><td>Partly cloudy at night</td><td>Combined from Crescent moon and Cloud</td></tr>
+            <tr><td class="n">cloudy.png</td><td>Cloudy</td><td>Cloud</td></tr>
+            <tr><td class="n">rain.png</td><td>Rain and drizzle</td><td>Cloud with rain</td></tr>
+            <tr><td class="n">storm.png</td><td>Thunderstorm</td><td>Cloud with lightning and rain</td></tr>
+            <tr><td class="n">snow.png</td><td>Snow</td><td>Cloud with snow</td></tr>
+            <tr><td class="n">fog.png</td><td>Fog</td><td>Combined from Cloud, plus three drawn fog bars</td></tr>
+            <tr><td class="n">droplet.png</td><td>Spare, for the rain-chance row or app screens</td><td>Droplet</td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li><b>Day and night:</b> only Clear and Partly cloudy change at night. For the other conditions the night background does the work. Dawn and dusk use the day images.</li>
+          <li><b>Size:</b> the images are 256×256 px, which is sharp up to about 85 dp on the phone. The largest hero is 92 dp, so it is very slightly soft there; hourly and daily icons are 14–18 dp. Put the files in <code>drawable-nodpi</code> so Android doesn't rescale them.</li>
+          <li><b>Not used:</b> Fluent's own "Fog" is a square tile and "Night with stars" is a city skyline, so neither fits a transparent widget.</li>
+          <li><b>Bleed:</b> on most sizes the image runs off the top-right edge. Glance can't place images outside a widget's bounds, so pre-crop a copy for each size, or keep it inside the edge if that looks good enough on the phone.</li>
+          <li><b>Clock:</b> uses the sun and moon only. By day the sun sits high in the top-right corner. At dawn and dusk it sits half below the bottom edge, like a sunrise. At night the moon is top-right.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="sizes">
+        <h2>Sizes</h2>
+        <p>Use <code>SizeMode.Responsive</code> with the sizes below. Glance picks the largest declared size that fits the cell, so each layout must also hold when the cell is up to about 20% bigger than declared.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Widget</th><th>Cells</th><th>DpSize</th><th>Shows</th></tr></thead>
+          <tbody>
+            <tr><td>Weather</td><td class="n">2×1</td><td class="n">140×70</td><td>Temperature, art, summary line, city, time</td></tr>
+            <tr><td>Weather</td><td class="n">2×2</td><td class="n">140×140</td><td>Adds high/low. Summary moves into a chip.</td></tr>
+            <tr><td>Weather</td><td class="n">4×2</td><td class="n">290×140</td><td>Adds feels-like and a 6-hour strip</td></tr>
+            <tr><td>Weather</td><td class="n">4×3</td><td class="n">290×215</td><td>Adds condition name, today's precipitation, hourly rain chance and the "Updated" label</td></tr>
+            <tr><td>Weather</td><td class="n">4×4</td><td class="n">290×290</td><td>Adds the 3-day outlook with range bars</td></tr>
+            <tr><td>Clock</td><td class="n">1×1</td><td class="n">70×70</td><td>Time stacked hours over minutes, 3-letter city code, sun/moon. No seconds or AM/PM.</td></tr>
+            <tr><td>Clock</td><td class="n">2×1</td><td class="n">140×70</td><td>City name, time, time difference</td></tr>
+            <tr><td>Clock</td><td class="n">2×2</td><td class="n">140×140</td><td>Adds the day/night label and optional seconds</td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li>Weather widget info: <code>minWidth/minHeight</code> for 2×1, <code>targetCellWidth/Height</code> 4×2, <code>resizeMode="horizontal|vertical"</code>.</li>
+          <li>Clock widget info: minimum 1×1, target 2×2.</li>
+          <li>Corner radius: <code>@android:dimen/system_app_widget_background_radius</code>. One UI applies its own widget corner rounding, so check that the drawable radius matches it on the phone.</li>
+          <li>One UI's home screen grid is usually 4×5 or 5×5, so cells are wider than on a Pixel. Glance's responsive sizes take care of that, but check 4×2 on the real grid.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="summary">
+        <h2>Summary line</h2>
+        <p>One short line, picked in two tiers. Urgent rules change what you do, so they're checked in order and the first that applies wins. Otherwise every "flavor" rule that applies becomes a candidate, and a seed rotates between candidates and their phrasings. The widget changes the seed every two hours (offset per widget), so the line varies through the day without flickering between redraws. Each size only uses phrasings that fit: 17 characters at 2×1, 19 at 2×2, 22 at 4×2 and 24 at 4×3 and 4×4. Temperatures in the text follow the unit setting. The widget lab's Summary engine panel shows every rule's verdict and the arithmetic for any condition, hour and seed.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Tier</th><th>Rule</th><th>Example phrasings</th></tr></thead>
+          <tbody>
+            <tr><td>Urgent 1</td><td>Thunderstorm in the rest of today</td><td>Storms until 17:00 · Thunder by 16:00 · Stormy night ahead</td></tr>
+            <tr><td>Urgent 2</td><td>Raining or snowing now, stops today</td><td>Dry by 15:00 · Rain eases by 15:00 · Clearing up by 15:00</td></tr>
+            <tr><td>Urgent 3</td><td>Raining or snowing now, carries on</td><td>Rain all day · Umbrella day · Snow day · Wet evening ahead</td></tr>
+            <tr><td>Urgent 4</td><td>Dry now, wet later today</td><td>Rain from 16:00 · Umbrella by 16:00 · Snow arrives at 16:00</td></tr>
+            <tr><td>Urgent 5</td><td>Foggy now, clears today</td><td>Fog clears by 11:00 · Misty until 11:00</td></tr>
+            <tr><td>Urgent 6</td><td>40 °C or hotter, day still ahead</td><td>Scorcher: 42° today · Peak heat 42°</td></tr>
+            <tr><td>Urgent 7</td><td>Below zero tonight</td><td>Freezing tonight · Frost tonight</td></tr>
+            <tr><td>Flavor</td><td>Rain or snow tomorrow</td><td>Rain tomorrow · Umbrella tomorrow · White one tomorrow</td></tr>
+            <tr><td>Flavor</td><td>Today vs yesterday (±3°), before 18:00</td><td>Hotter today · Up 5° on yesterday · Cooler than yesterday</td></tr>
+            <tr><td>Flavor</td><td>Tomorrow vs today (±3°)</td><td>Cooler tomorrow · Fresher tomorrow · Heats up tomorrow</td></tr>
+            <tr><td>Flavor</td><td>Next days all dry, or mostly wet</td><td>Dry days ahead · No rain in sight · Wet days ahead</td></tr>
+            <tr><td>Flavor</td><td>Sunrise or sunset within the hour</td><td>Sunset at 17:52 · Golden hour soon · Sun's up at 6:21</td></tr>
+            <tr><td>Flavor</td><td>Clear night</td><td>Clear skies tonight · Starry night</td></tr>
+            <tr><td>Flavor</td><td>Drops 5° or more by evening</td><td>Down to 28° by 21:00 · Cooler by 21:00</td></tr>
+            <tr><td>Flavor</td><td>Feels 3° or more off</td><td>Feels like 39° · Feels colder: 2° · Wind chill: 2°</td></tr>
+            <tr><td>Flavor</td><td>Cool morning that warms 8° or more</td><td>Warms up to 31° · Heading for 31°</td></tr>
+            <tr><td>Flavor</td><td>Hot (35–40 °C), daytime</td><td>Hot one: 37° · Peaks at 37°</td></tr>
+            <tr><td>Flavor</td><td>Mild, dry and sunny</td><td>Lovely day out · Perfect weather</td></tr>
+            <tr><td>Fallback</td><td>Nothing notable</td><td>Like yesterday · Blue skies · Grey but dry · Quiet night ahead</td></tr>
+          </tbody>
+        </table></div>
+        <p>Rules live in <code>core/Summary.kt</code> as a list, so adding one is a single entry. Keep phrasings in string resources when adding translations.</p>
+      </section>
+
+      <section class="sec" id="data">
+        <h2>Data</h2>
+        <p>One Open-Meteo request per refresh. It always fetches metric units, and the app converts on the device so each unit setting works on its own. <code>past_days=1</code> provides yesterday's high for rule 7.</p>
+<pre>https://api.open-meteo.com/v1/forecast?latitude=52.52&amp;longitude=13.41
+  &amp;current=temperature_2m,apparent_temperature,weather_code,precipitation,is_day
+  &amp;hourly=temperature_2m,precipitation_probability,precipitation,snowfall,weather_code,is_day
+  &amp;daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,
+         precipitation_sum,snowfall_sum,sunrise,sunset
+  &amp;past_days=1&amp;forecast_days=5&amp;timezone=auto</pre>
+        <div class="tbl"><table>
+          <thead><tr><th>Condition</th><th>WMO weather codes</th></tr></thead>
+          <tbody>
+            <tr><td>Clear</td><td class="n">0, 1</td></tr>
+            <tr><td>Partly cloudy</td><td class="n">2</td></tr>
+            <tr><td>Cloudy</td><td class="n">3</td></tr>
+            <tr><td>Fog</td><td class="n">45, 48</td></tr>
+            <tr><td>Rain (drizzle included)</td><td class="n">51–57, 61–67, 80–82</td></tr>
+            <tr><td>Snow</td><td class="n">71–77, 85, 86</td></tr>
+            <tr><td>Thunderstorm</td><td class="n">95, 96, 99</td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li><b>Precipitation amount:</b> rain shows <code>precipitation_sum</code> in mm or in. Snow shows <code>snowfall_sum</code> in cm or in.</li>
+          <li><b>GPS location:</b> the platform <code>LocationManager.getCurrentLocation</code> with coarse permission. That is enough for weather and keeps the public repo free of Play Services setup.</li>
+          <li><b>City name for GPS:</b> Open-Meteo has no reverse geocoding. Android's <code>Geocoder</code> works on the Samsung phone (Android 13+ has an async version). If it ever returns nothing, show "Current location".</li>
+          <li><b>Pinned city search:</b> Open-Meteo Geocoding API. The same search finds the clock's city, and the app stores its IANA time zone and coordinates.</li>
+          <li><b>Attribution:</b> Open-Meteo data is CC BY 4.0 and free for non-commercial use. Credit it in AMN's About screen and in the repo README.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="behavior">
+        <h2>Behavior</h2>
+        <ul>
+          <li><b>Refresh:</b> WorkManager runs every 30 minutes when a network is available. It also refreshes when the app opens and when GPS location moves more than 5 km.</li>
+          <li><b>"Updated" label:</b> shown on 4×3 and 4×4 ("Updated 12 min ago"). It is recalculated at each widget update, so it moves in refresh-sized steps.</li>
+          <li><b>Stale data:</b> after 3 hours, the label reads "Updated 3 h ago" with a warning icon. Sizes without the label show the icon next to the time. The widget always shows the last good data and never goes blank offline.</li>
+          <li><b>Time:</b> both widgets show time with a <code>TextClock</code> and a fixed time zone, so it stays exact without widget updates.</li>
+          <li><b>Clock updates</b> are needed only when the time-of-day phase changes, when midnight passes in either zone ("tomorrow" label), and when the phone's time zone changes (<code>ACTION_TIMEZONE_CHANGED</code>). Schedule the next one with WorkManager or an inexact alarm. No per-minute updates are needed.</li>
+          <li><b>Tap:</b> opens that widget's edit page in its Editing state. Once AMN has a weather screen, tapping the weather widget can go there instead, and the edit page stays one long-press away.</li>
+          <li><b>Setup:</b> weather asks for "Current location" or a city search when first added. The clock asks for a city, 12/24h and seconds. Both can be changed later from the widget's long-press Settings option on One UI (<code>widgetFeatures="reconfigurable"</code>) or inside AMN.</li>
+          <li><b>Battery:</b> One UI may put AMN to sleep and delay refreshes. Add AMN to "Never sleeping apps" in the phone's battery settings, and show a hint on the weather screen if refreshes fall more than an hour behind.</li>
+          <li><b>Several clocks:</b> each clock widget instance stores its own city, so you can place a few side by side.</li>
+        </ul>
+      </section>
+
+
+      <section class="sec" id="editspec">
+        <h2>Edit pages</h2>
+        <p>One Flutter route per widget: <code>/widget/weather</code> and <code>/widget/clock</code>. The same route handles adding and editing; only the title, the top-left button, the main button and the Data card change.</p>
+        <div class="tbl"><table>
+          <thead><tr><th></th><th>Adding</th><th>Editing</th></tr></thead>
+          <tbody>
+            <tr><td>Opens when</td><td>You drop the widget from the widget picker</td><td>You tap the widget, or choose Settings from its long-press menu</td></tr>
+            <tr><td>Top left</td><td>Close (×). The widget isn't added.</td><td>Back arrow. Leaves without saving.</td></tr>
+            <tr><td>Main button</td><td>Add to home screen</td><td>Save</td></tr>
+            <tr><td>Data card (weather)</td><td>Hidden</td><td>Last update and Refresh now</td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li><b>Wiring:</b> <code>WidgetConfigActivity</code> is a small <code>FlutterActivity</code> subclass, registered as <code>android:configure</code> in both widget info XMLs with <code>widgetFeatures="reconfigurable"</code>. It reads <code>EXTRA_APPWIDGET_ID</code>, sets <code>RESULT_CANCELED</code> straight away, and opens the route for that widget kind with the id and an add/edit flag. The widget's tap action starts the same activity in edit mode.</li>
+          <li><b>Preview:</b> the real widget, shown in a platform view (<code>AndroidView</code>, view type <code>amn/widget-preview</code>). Kotlin runs <code>GlanceAppWidget.compose(context, size, state)</code> with the unsaved settings, then <code>RemoteViews.apply()</code>, and puts the result in a <code>FrameLayout</code>. Every settings change on the page re-renders it. Wrap it in <code>IgnorePointer</code> so the widget's own tap action doesn't fire, and clip the corners in Flutter, since One UI only does that on the home screen. If the platform view misbehaves on One UI, fall back to drawing the preview in Flutter from values Kotlin computes.</li>
+          <li><b>Preview data:</b> weather uses the last cached forecast. On the very first add, before the first fetch finishes, it shows sample data with a "Loading weather…" note.</li>
+          <li><b>Storage:</b> Kotlin owns the settings. Per-widget settings live in Glance state, keyed by the widget id. Weather: location mode and pinned city (name, latitude, longitude). Clock: city name, IANA time zone, latitude and longitude, 12/24h and seconds. Units are app-wide in DataStore and shared by all weather widgets. Flutter reads and writes all of them only through the channel.</li>
+          <li><b>City search:</b> done in Flutter (<code>http</code> package) against the Open-Meteo Geocoding API. It starts at 2 characters, waits 300 ms after typing stops, and shows up to 5 results with name, region and country. Clock results show each city's current time, using the time zone the API returns. With no match: "No city matches '…'. Check the spelling, or try a larger city nearby." When offline: "You're offline. Search needs a connection. Your current city stays."</li>
+          <li><b>Location permission:</b> requested from Flutter with <code>permission_handler</code>. It asks for approximate location first, then explains why "Allow all the time" is needed (refreshes run in the background) and opens settings. If either is refused, the card says "Location is off for AMN" with an Allow button. Choose a city stays available, and the widget uses the last pinned city.</li>
+          <li><b>Defaults when adding:</b> weather starts on Current location if permission is already granted. Otherwise it starts on Choose a city with the search field focused. The clock starts with the phone's 12/24h setting and seconds off. Add to home screen stays disabled until a city is picked.</li>
+          <li><b>Cold start:</b> opening the page from a widget starts the Flutter engine, which takes about half a second. Give the activity a launch theme in the widget's colors so the wait doesn't flash white.</li>
+          <li><b>Look:</b> follows the phone's light or dark theme, with AMN's orange as the accent. The title uses Barlow Condensed (bundled in Flutter <code>assets/fonts</code> too). Everything else uses the system font.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="arch">
+        <h2>Architecture</h2>
+        <p>Kotlin computes, Flutter displays. Widgets refresh while AMN is closed, so everything a widget needs runs natively without starting Flutter. Flutter owns every screen.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Part</th><th>Where</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>App shell and tools</td><td class="n">lib/</td><td>Flutter. Knows nothing about widgets except <code>widgetConfigRoute</code>.</td></tr>
+            <tr><td>Widget package</td><td class="n">packages/amn_widgets/</td><td>A local Flutter plugin that holds everything widget-related. Its Dart side (<code>lib/</code>) has the edit pages, the live preview and the channel bridge.</td></tr>
+            <tr><td>Core logic</td><td class="n">amn_widgets: …/widgets/core/</td><td>Plain Kotlin with no Android imports: forecast model, WMO mapping, summary rules, time-of-day, palettes and the contrast guard. Unit-tested on the JVM. Can move to Kotlin Multiplatform if iOS comes.</td></tr>
+            <tr><td>Weather data</td><td class="n">amn_widgets: …/widgets/data/</td><td>Open-Meteo client, cached forecast, location lookup and the 30-minute WorkManager job.</td></tr>
+            <tr><td>Widgets</td><td class="n">amn_widgets: …/widgets/glance/ and config/</td><td>Glance widgets and receivers (<code>glance</code>). <code>WidgetConfigActivity</code> and the preview platform view (<code>config</code>). The plugin class registers the channel and the view.</td></tr>
+            <tr><td>Bridge</td><td class="n">amn/widgets channel</td><td>See the method list below.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="tbl"><table>
+          <thead><tr><th>Method (channel amn/widgets)</th><th>Does</th></tr></thead>
+          <tbody>
+            <tr><td class="n">launchArgs()</td><td>Widget id, kind (weather/clock) and mode (add/edit) the page was opened with</td></tr>
+            <tr><td class="n">getSettings(id)</td><td>Stored settings for that widget, plus the app-wide units</td></tr>
+            <tr><td class="n">previewChanged(viewId, settings)</td><td>Re-renders the platform-view preview with unsaved settings</td></tr>
+            <tr><td class="n">save(id, settings)</td><td>Stores the settings, updates the widget, and finishes with <code>RESULT_OK</code> when adding</td></tr>
+            <tr><td class="n">cancel()</td><td>Finishes with <code>RESULT_CANCELED</code>. The widget isn't added.</td></tr>
+            <tr><td class="n">refreshNow(id)</td><td>Runs the weather job once and returns the new "updated" time</td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li><b>Shared assets:</b> Barlow Condensed and the art go in <code>android/app/src/main/res</code> (<code>font/</code>, <code>drawable-nodpi/</code>) for the widgets, and the font also goes in Flutter <code>assets/fonts</code> for the page titles.</li>
+          <li><b>iOS later:</b> the Flutter app runs as-is. Widgets would be a separate SwiftUI/WidgetKit target, with the core logic shared through Kotlin Multiplatform or ported to Swift. Widget editing on iOS uses Apple's own edit sheet (App Intents), not these pages.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="glance">
+        <h2>Building in Glance</h2>
+        <div class="note"><b>Correction to what I said earlier:</b> custom fonts don't have to become bitmaps. Glance's <code>Text</code> only takes system fonts, but Glance can embed a classic XML layout through <code>AndroidRemoteViews</code>. A <code>TextClock</code> or <code>TextView</code> in that layout can use <code>android:fontFamily="@font/barlow_condensed_bold"</code> (Android 8+). That keeps the clock exact, keeps seconds possible, and avoids redrawing every minute. Prototype it first on the Samsung phone. If the font loads there, the fallbacks below aren't needed.</div>
+        <div class="tbl"><table>
+          <thead><tr><th>Piece</th><th>Approach</th><th>Fallback</th></tr></thead>
+          <tbody>
+            <tr><td>Big numerals</td><td><code>AndroidRemoteViews</code> with an XML <code>TextClock</code> / <code>TextView</code> using the bundled font</td><td>Temperature drawn to a bitmap on each refresh. Clock uses the system <code>sans-serif-condensed</code> bold.</td></tr>
+            <tr><td>Seconds</td><td><code>TextClock</code> with an <code>HH:mm:ss</code> format ticks on its own. Off by default; it costs some battery.</td><td>Hide the setting if the font prototype fails.</td></tr>
+            <tr><td>Gradients</td><td>Glance has no gradient brush. Use an XML <code>&lt;shape&gt;</code> gradient drawable for each state as the background.</td><td>Generate a bitmap from the same tokens at runtime.</td></tr>
+            <tr><td>Hero art</td><td><code>Image</code> with <code>ImageProvider(R.drawable…)</code>, aligned top-right in a <code>Box</code>, using the pre-cropped bleed versions</td><td></td></tr>
+            <tr><td>Range bars</td><td>Nested <code>Box</code>es with computed dp widths and rounded backgrounds</td><td></td></tr>
+            <tr><td>Chip and panel fills</td><td>Text color at 15% / 11% opacity as a <code>ColorProvider</code> on a rounded drawable</td><td></td></tr>
+            <tr><td>Animation</td><td>None. Widgets are static between updates, and the design does not rely on motion.</td><td></td></tr>
+          </tbody>
+        </table></div>
+        <ul>
+          <li>Generate palette tokens from one Kotlin table: 7 conditions × 4 phases × light/dark. A unit test applies the contrast rule from the Color section and fails the build below 4.5:1.</li>
+          <li>Set <code>minSdk 34</code> to match the phone. That makes font resources, the system corner radius and widget reconfiguration available everywhere the app runs, with no version checks.</li>
+          <li>All widget code lives in the <code>amn_widgets</code> plugin package (Kotlin package <code>dev.amaan.amn.widgets</code> with <code>core</code>, <code>data</code>, <code>glance</code> and <code>config</code>). The app depends on it by path, and the in-app tools never touch it.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="a11y">
+        <h2>Accessibility</h2>
+        <ul>
+          <li><b>Contrast:</b> all text reaches 4.5:1 against both ends of its background (see the Color section).</li>
+          <li><b>TalkBack:</b> give each widget one <code>contentDescription</code> that reads as a sentence. The examples under the mockups update with the controls.</li>
+          <li><b>Font scaling:</b> labels in sp with <code>maxLines = 1</code> and an ellipsis. Numerals in dp, because they define the layout. Test at font scale 1.3 and 2.0; Android 14's nonlinear scaling grows large text less.</li>
+          <li><b>Meaning without color:</b> conditions always have art and, at 4×3 and up, a written name. Day/night on the clock has a sun or moon and, at 2×2, a word.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="open">
+        <h2>Open items</h2>
+        <ul>
+          <li>AMN's weather screen will be designed separately. Until then, tapping a widget opens its edit page.</li>
+          <li>The AndroidRemoteViews font prototype decides whether seconds stay as an option.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const DEVICE_TZ=Intl.DateTimeFormat().resolvedOptions().timeZone;
+const cityName=()=>S.loc==='gps'?'Berlin':S.wcity;
+const ORDER=['clear','partly','cloudy','rain','storm','snow','fog'];
+const PHASES=['dawn','day','dusk','night'];
+const LABEL={clear:'Clear',partly:'Partly cloudy',cloudy:'Cloudy',rain:'Rain',storm:'Thunderstorm',snow:'Snow',fog:'Fog'};
+const PLAB={dawn:'Dawn',day:'Day',dusk:'Dusk',night:'Night'};
+const CITIES=[['Tokyo','Asia/Tokyo','TYO','Japan'],['New York','America/New_York','NYC','United States'],['London','Europe/London','LON','United Kingdom'],['Riyadh','Asia/Riyadh','RUH','Saudi Arabia'],['Sydney','Australia/Sydney','SYD','Australia'],['São Paulo','America/Sao_Paulo','SAO','Brazil'],['Mumbai','Asia/Kolkata','BOM','India'],['Los Angeles','America/Los_Angeles','LAX','United States'],['Paris','Europe/Paris','PAR','France'],['Dubai','Asia/Dubai','DXB','United Arab Emirates'],['Singapore','Asia/Singapore','SIN','Singapore'],['Karachi','Asia/Karachi','KHI','Pakistan'],['Cairo','Africa/Cairo','CAI','Egypt'],['Toronto','America/Toronto','YTO','Canada']];
+
+/* Palettes: [top, bottom, preferred ink] */
+const COND={
+  clear:{day:['#FFD25A','#FF8F3A','#3A1500'],night:['#101B52','#2C2775','#EEF0FF'],dawn:['#FFB59A','#FFDFAE','#3B1209'],dusk:['#C2456B','#3E2A7A','#FFF1EC']},
+  partly:{day:['#8CCBFF','#FFD889','#0E2A47'],night:['#17265A','#3B4380','#EEF1FF']},
+  cloudy:{day:['#C9D3E2','#8E9DB5','#18202E'],night:['#2C3446','#161B26','#E9EDF5']},
+  rain:{day:['#4E70AE','#2D4677','#F3F7FF'],night:['#1C2A48','#0B1324','#E8EFFF']},
+  storm:{day:['#4A3B7A','#1D1838','#F6F0FF'],night:['#1E1236','#08060F','#F3ECFF']},
+  snow:{day:['#EEF4FF','#BCD0EE','#14305C'],night:['#2D3D63','#141E37','#EAF2FF']},
+  fog:{day:['#E2DCD1','#ADA699','#2A2621'],night:['#3B3934','#1E1C19','#EEEAE2']}
+};
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const rgb2hex=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+const mix=(a,b,t)=>{const A=hex2rgb(a),B=hex2rgb(b);return rgb2hex(A.map((v,i)=>v+(B[i]-v)*t));};
+const lum=h=>{const c=hex2rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+function pickInk(top,bot,pref){
+  const score=c=>Math.min(contrast(c,top),contrast(c,bot));
+  if(score(pref)>=4.5) return {ink:pref,ratio:score(pref)};
+  let best=pref,bs=score(pref);
+  for(const c of ['#F7F5FF','#141824']){const s=score(c);if(s>bs){bs=s;best=c;}}
+  return {ink:best,ratio:bs};
+}
+function palette(cond,phase,dark){
+  const C=COND[cond];let top,bot,ink;
+  if(phase==='night')[top,bot,ink]=C.night;
+  else if(C[phase])[top,bot,ink]=C[phase];
+  else{[top,bot,ink]=C.day;
+    if(phase==='dawn'){top=mix(top,'#FF9E7A',.38);bot=mix(bot,'#FFD9A8',.25);}
+    if(phase==='dusk'){top=mix(top,'#C2456B',.35);bot=mix(bot,'#3E2A7A',.45);}
+  }
+  if(dark&&phase!=='night'){top=mix(top,'#0A0C15',.55);bot=mix(bot,'#0A0C15',.62);}
+  let r=pickInk(top,bot,ink),g=0;
+  while(r.ratio<4.5&&g<14){const to=lum(r.ink)>.5?'#07080F':'#FFFFFF';top=mix(top,to,.08);bot=mix(bot,to,.08);r=pickInk(top,bot,r.ink);g++;}
+  return {top,bot,ink:r.ink,ratio:r.ratio};
+}
+const phaseOf=h=>h>=6&&h<8?'dawn':h>=8&&h<17?'day':h>=17&&h<19?'dusk':'night';
+
+/* Sample forecasts (relative to "now"; 12 hourly values) */
+const AB={k:'clear',p:'partly',c:'cloudy',r:'rain',t:'storm',s:'snow',f:'fog'};
+const hc=s=>s.split(' ').map(x=>AB[x]);const nums=s=>s.split(' ').map(Number);const Z='0 0 0 0 0 0 0 0 0 0 0 0';
+const FX={
+  clear:{lo:14,hi:26,yHi:21,feelsD:1,pop:nums('0 0 0 0 5 5 5 5 0 0 0 0'),mm:nums(Z),hc:hc('k k k k k k k k k k k k'),today:{pop:5,mm:0},days:[['clear',25,13,10],['partly',22,12,20],['cloudy',19,11,40]]},
+  partly:{lo:11,hi:20,yHi:19,feelsD:-1,pop:nums('10 10 15 20 20 25 25 20 15 15 10 10'),mm:nums(Z),hc:hc('p p p p p p p p p p p p'),today:{pop:25,mm:.2},days:[['cloudy',15,9,30],['rain',14,8,70],['partly',16,9,20]]},
+  cloudy:{lo:9,hi:15,yHi:15,feelsD:-2,pop:nums('20 25 30 30 35 40 40 40 45 45 45 45'),mm:nums(Z),hc:hc('c c c c c c c c c c c c'),today:{pop:40,mm:.6},days:[['rain',13,8,80],['rain',12,7,65],['cloudy',14,8,30]]},
+  rain:{lo:8,hi:13,yHi:15,feelsD:-3,pop:nums('90 85 70 30 10 5 5 5 10 10 10 10'),mm:nums('1.8 1.2 .6 .1 0 0 0 0 0 0 0 0'),hc:hc('r r r c c p p p c c c c'),today:{pop:95,mm:6.4},days:[['cloudy',14,7,20],['partly',15,8,10],['clear',17,9,0]]},
+  storm:{lo:19,hi:29,yHi:31,feelsD:3,pop:nums('80 90 80 40 20 10 10 10 10 10 10 10'),mm:nums('6 12 8 1 0 0 0 0 0 0 0 0'),hc:hc('t t t r c c p p p p p p'),today:{pop:90,mm:25},days:[['rain',26,18,60],['partly',28,19,20],['clear',30,20,0]]},
+  snow:{lo:-6,hi:0,yHi:4,feelsD:-5,pop:nums('80 85 85 90 90 85 85 80 80 80 75 75'),mm:nums('.6 .8 .8 1 1 .9 .8 .7 .7 .6 .6 .5'),hc:hc('s s s s s s s s s s s s'),today:{pop:90,mm:7,snowCm:4.9},days:[['snow',1,-5,60],['cloudy',2,-4,30],['partly',3,-3,10]]},
+  fog:{lo:5,hi:12,yHi:11,feelsD:-2,pop:nums('5 5 5 5 5 10 10 10 10 10 10 10'),mm:nums(Z),hc:hc('f f f c p p p p p p p p'),today:{pop:10,mm:0},days:[['partly',12,6,10],['clear',13,5,0],['cloudy',11,6,30]]}
+};
+function diurnal(h){const x=((h-5)%24+24)%24;return x<=10?(1-Math.cos(Math.PI*x/10))/2:(1+Math.cos(Math.PI*(x-10)/14))/2;}
+const tAt=(fx,h)=>Math.round(fx.lo+(fx.hi-fx.lo)*diurnal(h));
+
+/* State */
+const S={cond:'partly',hour:new Date().getHours(),dark:matchMedia('(prefers-color-scheme: dark)').matches,city:'Asia/Tokyo',h24:true,secs:false,tUnit:'C',pUnit:'mm',loc:'gps',stale:false,wcity:'Berlin',mode:'add',wsize:'s22',csize:'c22'};
+try{const s=JSON.parse(localStorage.getItem('daybreak-state')||'null');if(s){delete s.hour;Object.assign(S,s);}}catch(e){}
+const save=()=>{try{const {hour,...rest}=S;localStorage.setItem('daybreak-state',JSON.stringify(rest));}catch(e){}};
+
+/* Formatting */
+const pad=n=>String(n).padStart(2,'0');
+const T=c=>Math.round(S.tUnit==='F'?c*9/5+32:c);
+const fmtClock=h=>{h=((h%24)+24)%24;return S.h24?`${pad(h)}:00`:`${h%12||12} ${h<12?'AM':'PM'}`;};
+const hLabel=h=>S.h24?pad(h):`${h%12||12} ${h<12?'AM':'PM'}`;
+function amount(fx){
+  if(fx.today.snowCm!=null) return S.pUnit==='mm'?`${fx.today.snowCm.toFixed(1)} cm snow`:`${(fx.today.snowCm/2.54).toFixed(1)} in snow`;
+  return S.pUnit==='mm'?`${fx.today.mm.toFixed(1)} mm`:`${(fx.today.mm/25.4).toFixed(2)} in`;
+}
+const instant=()=>{const n=new Date();n.setHours(S.hour);return n;};
+const FMT={};
+function fmtFor(tz){return FMT[tz]||(FMT[tz]=new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}));}
+function parts(d,tz){const p=fmtFor(tz).formatToParts(d).reduce((a,x)=>(a[x.type]=x.value,a),{});return {y:+p.year,mo:+p.month,d:+p.day,h:+p.hour%24,m:+p.minute,s:+p.second,ymd:`${p.year}-${p.month}-${p.day}`};}
+function tzOff(tz,d){const p=parts(d,tz);return Math.round((Date.UTC(p.y,p.mo-1,p.d,p.h,p.m)-Math.floor(d.getTime()/60000)*60000)/60000);}
+function offsetInfo(d,tz){
+  const diff=tzOff(tz,d)-tzOff(DEVICE_TZ,d);const a=Math.abs(diff),h=Math.floor(a/60),m=a%60;
+  const c=parts(d,tz).ymd,me=parts(d,DEVICE_TZ).ymd;const rel=c>me?'tomorrow':c<me?'yesterday':'';
+  if(diff===0) return {text:rel?`Same time · ${rel}`:'Same time as you',spoken:'same time as you'};
+  const off=`${diff>0?'+':'−'}${h}h${m?` ${m}m`:''}`;
+  const spoken=`${h} hour${h===1?'':'s'}${m?` ${m} minutes`:''} ${diff>0?'ahead':'behind'}${rel?`, ${rel}`:''}`;
+  return {text:rel?`${off} · ${rel}`:off,spoken};
+}
+function fmtPart(p,k){
+  if(k==='hm') return S.h24?`${pad(p.h)}:${pad(p.m)}`:`${p.h%12||12}:${pad(p.m)}`;
+  if(k==='h') return S.h24?pad(p.h):String(p.h%12||12);
+  if(k==='m') return pad(p.m);
+  if(k==='s') return pad(p.s);
+  if(k==='ap') return S.h24?'':(p.h<12?'AM':'PM');
+  return '';
+}
+
+/* Summary rules */
+function summarize(fx,hour){
+  const left=24-hour,today=i=>i<left,H=fx.hc,P=fx.pop;
+  const wet=i=>P[i]>=50&&['rain','snow','storm'].includes(H[i]);
+  const kind=i=>H[i]==='snow'?'Snow':'Rain';const at=i=>fmtClock(hour+i);
+  const d=fx.days[0];
+  const R={
+    1:['Thunderstorm forecast for the rest of today',()=>{const i=H.findIndex((c,k)=>c==='storm'&&today(k));if(i<0)return null;
+        if(i===0){const e=H.findIndex((c,k)=>k>0&&c!=='storm');return e>0&&today(e)?`Storms until ${at(e)}`:'Storms tonight';}
+        return `Storms from ${at(i)}`;}],
+    2:['Wet now, stops before midnight',()=>{if(!wet(0))return null;const e=H.findIndex((c,k)=>k>0&&!wet(k));return e>0&&today(e)?`Dry by ${at(e)}`:null;}],
+    3:['Wet now and it carries on',()=>wet(0)?(hour<15?`${kind(0)} all day`:`${kind(0)} into tonight`):null],
+    4:['Dry now, wet later today',()=>{const i=H.findIndex((c,k)=>k>0&&today(k)&&wet(k));return i>0?`${kind(i)} from ${at(i)}`:null;}],
+    5:['Foggy now, clears today',()=>{if(H[0]!=='fog')return null;const e=H.findIndex(c=>c!=='fog');return e>0&&today(e)?`Fog clears by ${at(e)}`:null;}],
+    6:['Rain or snow tomorrow (≥ 50%)',()=>d[3]>=50&&['rain','snow','storm'].includes(d[0])?`${d[0]==='snow'?'Snow':'Rain'} tomorrow`:null],
+    7:["Today's high vs yesterday's (±3 °C)",()=>{const x=fx.hi-fx.yHi;return x>=3?'Hotter today':x<=-3?'Cooler today':null;}],
+    8:["Tomorrow's high vs today's (±3 °C)",()=>{const x=d[1]-fx.hi;return x>=3?'Hotter tomorrow':x<=-3?'Cooler tomorrow':null;}],
+    9:['Nothing else applies',()=>'Like yesterday']
+  };
+  const order=[1,2,3,4,5,6,...(hour>=18?[8,7]:[7,8]),9];
+  for(const n of order){const t=R[n][1]();if(t)return {text:t,rule:n,why:R[n][0]};}
+}
+
+/* Illustrations: Fluent Emoji 3D (MIT), plus two composites */
+const IMG={clear:['clear-day','clear-night'],partly:['partly-day','partly-night'],cloudy:['cloudy','cloudy'],rain:['rain','rain'],storm:['storm','storm'],snow:['snow','snow'],fog:['fog','fog']};
+let AID=0;
+function art(cond,phase){const f=IMG[cond][phase==='night'?1:0];return `<img src="art/${f}.png" alt="" draggable="false" style="display:block;width:100%;height:100%;object-fit:contain">`;}
+
+/* Widget pieces */
+const u=n=>`calc(var(--u)*${n})`;
+const locIcon=()=>S.loc==='gps'
+  ?`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7z" fill="currentColor"/></svg>`
+  :`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>`;
+const warnIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z" fill="currentColor"/></svg>`;
+const dropIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2.5S5 10.2 5 14.5a7 7 0 0 0 14 0C19 10.2 12 2.5 12 2.5z" fill="currentColor"/></svg>`;
+const timeSpan=tz=>`<span class="tm"><span data-t="hm"${tz?` data-tz="${tz}"`:''}></span><span class="ap" data-t="ap"${tz?` data-tz="${tz}"`:''}></span></span>`;
+const meta=(fs,warn)=>`<div class="meta" style="font-size:${u(fs)}">${locIcon()}<b>${cityName()}</b><span aria-hidden="true">·</span>${timeSpan()}${warn&&S.stale?warnIcon():''}</div>`;
+const hilo=c=>`H ${T(c.fx.hi)}° · L ${T(c.fx.lo)}°`;
+const upd=()=>S.stale?`${warnIcon()}Updated 3 h ago`:'Updated 12 min ago';
+
+function strip(c,n,pop,panel){
+  let s='';
+  for(let k=0;k<n;k++){const h=(c.hour+k)%24;
+    s+=`<div class="hr"><span class="hl">${k===0?'Now':hLabel(h)}</span><span class="mini" style="width:${u(pop?16:14)};height:${u(pop?16:14)}">${art(c.fx.hc[k],phaseOf(h))}</span><span class="num" style="font-size:${u(14)}">${T(tAt(c.fx,h))}°</span>${pop?`<span class="pp">${c.fx.pop[k]>=20?c.fx.pop[k]+'%':'&nbsp;'}</span>`:''}</div>`;}
+  return `<div class="strip${panel?' panel-w':''}" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${s}</div>`;
+}
+function daily(c){
+  const days=c.fx.days,all=days.flatMap(d=>[d[1],d[2]]),mn=Math.min(...all),mx=Math.max(...all);
+  const base=instant();
+  return `<div class="days">${days.map((d,k)=>{const dt=new Date(base);dt.setDate(dt.getDate()+k+1);
+    const nm=k===0?'Tomorrow':dt.toLocaleDateString('en-US',{weekday:'short'});
+    const l=(d[2]-mn)/(mx-mn)*100,r=100-(d[1]-mn)/(mx-mn)*100;
+    return `<div class="day" style="font-size:${u(11.5)}"><span>${nm}</span><span class="mini" style="width:${u(18)};height:${u(18)}">${art(d[0],'day')}</span><span class="dp">${d[3]>=20?d[3]+'%':''}</span><span class="num">${T(d[2])}°</span><span class="bar"><i style="left:${l}%;right:${r}%"></i></span><span class="num">${T(d[1])}°</span></div>`;}).join('')}</div>`;
+}
+const W={
+  s21:c=>`<div class="art" style="right:${u(-10)};top:${u(-2)};width:${u(64)};height:${u(64)}">${art(c.cond,c.phase)}</div>
+    <div class="in" style="padding:${u(9)} ${u(12)};justify-content:space-between">${meta(10.5,true)}
+    <div class="num" style="font-size:${u(34)}">${T(c.now)}°</div>
+    <div class="sum" style="font-size:${u(11.5)};max-width:${u(92)};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.sum.text}</div></div>`,
+  s22:c=>`<div class="art" style="right:${u(-18)};top:${u(-14)};width:${u(96)};height:${u(96)}">${art(c.cond,c.phase)}</div>
+    <div class="in" style="padding:${u(12)};justify-content:space-between">${meta(11,true)}
+    <div><div class="num" style="font-size:${u(60)}">${T(c.now)}°</div><div class="hilo" style="font-size:${u(11.5)};margin-top:${u(3)}">${hilo(c)}</div></div>
+    <div class="chip" style="font-size:${u(12)};padding:${u(5)} ${u(10)}">${c.sum.text}</div></div>`,
+  m42:c=>`<div class="art" style="right:${u(-6)};top:${u(-12)};width:${u(92)};height:${u(92)}">${art(c.cond,c.phase)}</div>
+    <div class="in" style="padding:${u(11)} ${u(12)} ${u(8)};gap:${u(3)}">${meta(11,true)}
+    <div style="display:flex;align-items:flex-end;gap:${u(10)}"><div class="num" style="font-size:${u(52)}">${T(c.now)}°</div>
+      <div style="display:grid;gap:${u(2)};max-width:${u(124)};padding-bottom:${u(2)}"><div class="sum" style="font-size:${u(14)}">${c.sum.text}</div><div class="hilo" style="font-size:${u(10.5)}">${hilo(c)} · Feels ${T(c.now+c.fx.feelsD)}°</div></div></div>
+    <div style="margin-top:auto">${strip(c,6,false,true)}</div></div>`,
+  big:(c,withDays)=>`<div class="art" style="right:${u(-4)};top:${u(36)};width:${u(92)};height:${u(92)}">${art(c.cond,c.phase)}</div>
+    <div class="in" style="padding:${u(13)} ${u(14)};gap:${u(4)}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:${u(8)}">${meta(12,false)}<span class="upd">${upd()}</span></div>
+    <div class="sum" style="font-size:${u(18)};max-width:${u(180)};margin-top:${u(2)}">${c.sum.text}</div>
+    <div style="display:flex;align-items:flex-end;gap:${u(10)}"><div class="num" style="font-size:${u(68)}">${T(c.now)}°</div>
+      <div style="display:grid;gap:${u(1)};font-size:${u(11.5)};padding-bottom:${u(3)}"><b style="font-weight:750">${LABEL[c.cond]}</b><span class="hilo">Feels ${T(c.now+c.fx.feelsD)}°</span><span class="hilo">${hilo(c)}</span></div></div>
+    <div class="prow" style="font-size:${u(11.5)}">${dropIcon()}${c.fx.today.pop}% chance · ${amount(c.fx)} today</div>
+    <div style="margin-top:${withDays?u(4):'auto'}">${strip(c,6,true,true)}</div>
+    ${withDays?`<div style="margin-top:auto">${daily(c)}</div>`:''}</div>`
+};
+W.l43=c=>W.big(c,false);W.l44=c=>W.big(c,true);
+
+function orbPos(phase,size){
+  return (phase==='dawn'||phase==='dusk')?`right:${u(-size*.16)};bottom:${u(-size*.42)}`:`right:${u(-size*.2)};top:${u(-size*.2)}`;
+}
+const timeBig=(tz,fs,withSecs)=>`<div style="display:flex;align-items:baseline;gap:${u(3)}"><span class="num" style="font-size:${u(fs)}" data-t="hm" data-tz="${tz}"></span>${withSecs&&S.secs?`<span class="num" style="font-size:${u(fs*.4)}" data-t="s" data-tz="${tz}"></span>`:''}${S.h24?'':`<span style="font-size:${u(fs*.24)};font-weight:700" data-t="ap" data-tz="${tz}"></span>`}</div>`;
+const CK={
+  c11:k=>`<div class="art" style="${orbPos(k.phase,44)};width:${u(44)};height:${u(44)}">${art('clear',k.phase)}</div>
+    <div class="in" style="padding:${u(8)} ${u(9)};justify-content:space-between"><b style="font-size:${u(10)};font-weight:800;letter-spacing:.04em">${k.city[2]}</b>
+    <div class="num" style="font-size:${u(28)}"><div data-t="h" data-tz="${k.city[1]}"></div><div data-t="m" data-tz="${k.city[1]}"></div></div></div>`,
+  c21:k=>`<div class="art" style="${orbPos(k.phase,64)};width:${u(64)};height:${u(64)}">${art('clear',k.phase)}</div>
+    <div class="in" style="padding:${u(8)} ${u(12)};justify-content:space-between"><b style="font-size:${u(11.5)};font-weight:800">${k.city[0]}</b>
+    ${timeBig(k.city[1],36,true)}<span style="font-size:${u(10.5)};font-weight:600">${k.off.text}</span></div>`,
+  c22:k=>`<div class="art" style="${orbPos(k.phase,96)};width:${u(96)};height:${u(96)}">${art('clear',k.phase)}</div>
+    <div class="in" style="padding:${u(12)} ${u(13)};justify-content:space-between">
+    <div style="display:grid;gap:${u(1)}"><b style="font-size:${u(15)};font-weight:800">${k.city[0]}</b><span style="font-size:${u(11.5)};font-weight:600">${PLAB[k.phase]}</span></div>
+    <div style="display:grid;gap:${u(5)}">${timeBig(k.city[1],54,true)}<span style="font-size:${u(11.5)};font-weight:600">${k.off.text}</span></div></div>`
+};
+
+function shell(pal,w,h,inner,cap,desc){
+  return `<figure class="slot"><div class="w" role="img" aria-label="${desc.replace(/"/g,'&quot;')}" style="--top:${pal.top};--bot:${pal.bot};--ink-w:${pal.ink};width:${u(w)};height:${u(h)}">${inner}</div><figcaption>${cap}</figcaption></figure>`;
+}
+function clockCtx(){
+  const city=CITIES.find(x=>x[1]===S.city)||CITIES[0],t=instant(),p=parts(t,city[1]),phase=phaseOf(p.h);
+  return {city,phase,pal:palette('clear',phase,S.dark),off:offsetInfo(t,city[1]),p};
+}
+let lastKey='';
+function spokenTime(p){return S.h24?`${pad(p.h)}:${pad(p.m)}`:`${p.h%12||12}:${pad(p.m)} ${p.h<12?'AM':'PM'}`;}
+
+function render(){
+  AID=0;
+  const fx=FX[S.cond],hour=S.hour,phase=phaseOf(hour),pal=palette(S.cond,phase,S.dark),now=tAt(fx,hour),sum=summarize(fx,hour);
+  const c={cond:S.cond,fx,hour,phase,pal,now,sum};
+  const wp=parts(instant(),DEVICE_TZ);
+  const wdesc=`${cityName()}, ${spokenTime(wp)}. ${T(now)} degrees, ${LABEL[S.cond].toLowerCase()}. ${sum.text}. High ${T(fx.hi)}, low ${T(fx.lo)}.`;
+  $('#wx').innerHTML=WSIZES
+    .map(([n,w,h,f])=>shell(pal,w,h,W[f](c),`${n} · ${w}×${h} dp`,wdesc)).join('');
+  const k=clockCtx();
+  const cdesc=`${k.city[0]}, ${spokenTime(k.p)}, ${PLAB[k.phase].toLowerCase()}, ${k.off.spoken}.`;
+  $('#ck').innerHTML=CSIZES
+    .map(([n,w,h,f])=>shell(k.pal,w,h,CK[f](k),`${n} · ${w}×${h} dp`,cdesc)).join('');
+  lastKey=k.phase+'|'+k.off.text+'|'+wp.m;
+  $('#phone').className='phone '+(S.dark?'dark':'light');
+  $('#sumText').textContent=sum.text;
+  $('#sumRule').textContent=`Rule ${sum.rule}: ${sum.why}`;
+  $('#tbW').textContent=wdesc;$('#tbC').textContent=cdesc;
+  $('#hour').value=S.hour;$('#hourval').textContent=`${fmtClock(S.hour)} · ${PLAB[phase]}`;
+  $('#city').value=S.city;
+  renderScreens(c,k,wdesc,cdesc);
+  document.querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',String(String(S[b.dataset.k])===b.dataset.v)));
+  tick(true);save();
+}
+function tick(skip){
+  const t=instant();
+  if(!skip){const k=clockCtx();if(k.phase+'|'+k.off.text+'|'+parts(t,DEVICE_TZ).m!==lastKey){render();return;}}
+  const cache={};
+  document.querySelectorAll('[data-t]').forEach(el=>{const tz=el.dataset.tz||DEVICE_TZ;const p=cache[tz]||(cache[tz]=parts(t,tz));const v=fmtPart(p,el.dataset.t);if(el.textContent!==v)el.textContent=v;});
+}
+
+/* Edit pages */
+const WSIZES=[['2×1',140,70,'s21'],['2×2',140,140,'s22'],['4×2',290,140,'m42'],['4×3',290,215,'l43'],['4×4',290,290,'l44']];
+const CSIZES=[['1×1',70,70,'c11'],['2×1',140,70,'c21'],['2×2',140,140,'c22']];
+const WCITIES=[['Berlin','Germany'],['Bern','Switzerland'],['Bergen','Norway'],['Hamburg','Germany'],['Munich','Germany'],['London','United Kingdom'],['Paris','France'],['Riyadh','Saudi Arabia'],['Jeddah','Saudi Arabia'],['Dubai','United Arab Emirates'],['Tokyo','Japan'],['New York','United States']];
+const ICON={
+  check:`<svg viewBox="0 0 24 24" class="chk" aria-hidden="true"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 11-11-1.4-1.4z" fill="currentColor"/></svg>`,
+  close:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" fill="currentColor"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z" fill="currentColor"/></svg>`};
+const norm=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const esc=x=>x.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const gmt=tz=>{const o=tzOff(tz,new Date()),a=Math.abs(o);return `GMT${o>=0?'+':'−'}${Math.floor(a/60)}${a%60?':'+pad(a%60):''}`;};
+const timeRt=tz=>`<span data-t="hm" data-tz="${tz}"></span><span class="ap" data-t="ap" data-tz="${tz}"></span>`;
+function renderLists(){
+  const wraw=$('#wq').value.trim(),craw=$('#cq').value.trim(),wq=norm(wraw),cq=norm(craw),t=instant();
+  const w=WCITIES.filter(c=>!wq||norm(c[0]).startsWith(wq)||norm(c[1]).startsWith(wq)).slice(0,5);
+  $('#wList').innerHTML=w.length?w.map(c=>`<button class="li" data-k="wcity" data-v="${c[0]}" aria-pressed="${S.wcity===c[0]}"><span class="grow"><b>${c[0]}</b><small>${c[1]}</small></span>${S.wcity===c[0]?ICON.check:''}</button>`).join('')
+    :`<div class="empty">No city matches “${esc(wraw)}”. Check the spelling, or try a larger city nearby.</div>`;
+  const c=CITIES.filter(x=>!cq||norm(x[0]).startsWith(cq)||norm(x[3]).startsWith(cq)).slice(0,5);
+  $('#cList').innerHTML=c.length?c.map(x=>`<button class="li" data-k="city" data-v="${x[1]}" aria-pressed="${S.city===x[1]}"><span class="grow"><b>${x[0]}</b><small>${x[3]}</small></span><span class="rt">${timeRt(x[1])}<small>${offsetInfo(t,x[1]).text}</small></span>${S.city===x[1]?ICON.check:''}</button>`).join('')
+    :`<div class="empty">No city matches “${esc(craw)}”. Try the country, or a larger city in the same time zone.</div>`;
+  tick(true);
+}
+function renderScreens(c,k,wdesc,cdesc){
+  const th=S.dark?'dark':'light',add=S.mode==='add';
+  ['#scrW','#scrC'].forEach(id=>$(id).className='scr '+th);
+  document.querySelectorAll('.scr .band').forEach(b=>b.className='band '+th);
+  const ws=WSIZES.find(x=>x[3]===S.wsize)||WSIZES[1],cs=CSIZES.find(x=>x[3]===S.csize)||CSIZES[2];
+  $('#wPrev').innerHTML=shell(c.pal,ws[1],ws[2],W[ws[3]](c),'',wdesc);
+  $('#cPrev').innerHTML=shell(k.pal,cs[1],cs[2],CK[cs[3]](k),'',cdesc);
+  $('#wTitle').textContent=add?'Add weather widget':'Weather widget';
+  $('#cTitle').textContent=add?'Add clock widget':'Clock widget';
+  ['#wBack','#cBack'].forEach(id=>{$(id).innerHTML=add?ICON.close:ICON.back;$(id).setAttribute('aria-label',add?'Close without adding':'Back');});
+  $('#wBtn').textContent=$('#cBtn').textContent=add?'Add to home screen':'Save';
+  $('#wData').hidden=add;
+  $('#wGps').hidden=S.loc!=='gps';$('#wPick').hidden=S.loc==='gps';
+  $('#wUpd').textContent=S.stale?'Updated 3 h ago':'Updated 12 min ago';
+  $('#cSel').innerHTML=`<div class="row"><span class="grow"><span class="selname">${k.city[0]}</span><small>${k.city[3]} · ${gmt(k.city[1])}</small></span><span class="grow" style="flex:none"><div class="selt">${timeRt(k.city[1])}</div><small style="text-align:right">${k.off.text}</small></span></div>`;
+  $('#cSecs').setAttribute('aria-checked',String(S.secs));
+  renderLists();
+}
+function snack(id,msg){const el=$(id);el.textContent=msg;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>{el.hidden=true;},2600);}
+$('#wq').addEventListener('input',renderLists);
+$('#cq').addEventListener('input',renderLists);
+$('#cSecs').addEventListener('click',()=>{S.secs=!S.secs;render();});
+$('#wBtn').addEventListener('click',()=>snack('#wSnack',S.mode==='add'?'Weather widget added to your home screen':'Saved'));
+$('#cBtn').addEventListener('click',()=>snack('#cSnack',S.mode==='add'?'Clock widget added to your home screen':'Saved'));
+$('#wBack').addEventListener('click',()=>snack('#wSnack',S.mode==='add'?'Closed. The widget wasn’t added.':'Closed without saving'));
+$('#cBack').addEventListener('click',()=>snack('#cSnack',S.mode==='add'?'Closed. The widget wasn’t added.':'Closed without saving'));
+$('#wRefresh').addEventListener('click',()=>{S.stale=false;render();snack('#wSnack','Weather updated');});
+
+/* Controls */
+$('#conds').innerHTML=ORDER.map(c=>`<button data-k="cond" data-v="${c}"><span class="ic">${art(c,'day')}</span>${LABEL[c]}</button>`).join('');
+$('#city').innerHTML=CITIES.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');
+document.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const v=b.dataset.v;S[b.dataset.k]=v==='true'?true:v==='false'?false:v;render();});
+$('#hour').addEventListener('input',e=>{S.hour=+e.target.value;render();});
+$('#city').addEventListener('change',e=>{S.city=e.target.value;render();});
+
+/* Palette matrix */
+$('#matrix').innerHTML=[false,true].map(dark=>`<div><h3 style="margin-bottom:10px">${dark?'Dark':'Light'} phone theme</h3><div class="mgrid"><span></span>${PHASES.map(p=>`<span class="h">${PLAB[p]}</span>`).join('')}
+${ORDER.map(c=>`<span class="h">${LABEL[c]}${c==='clear'?' + clock':''}</span>${PHASES.map(p=>{const q=palette(c,p,dark);return `<div class="sw" style="background:linear-gradient(165deg,${q.top},${q.bot});color:${q.ink}"><span class="num">24°</span><span class="r">${q.ratio.toFixed(1)}:1</span></div>`;}).join('')}`).join('')}</div></div>`).join('');
+
+render();
+setInterval(()=>tick(false),1000);
+})();
+</script>

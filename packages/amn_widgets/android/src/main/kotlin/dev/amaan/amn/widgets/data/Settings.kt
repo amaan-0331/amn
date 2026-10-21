@@ -30,10 +30,12 @@ data class ClockSettings(
     val lon: Double? = null,
     val h24: Boolean = true,
     val seconds: Boolean = false,
+    /** Show the city's current weather (refreshed hourly). */
+    val showWeather: Boolean = true,
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "cityName" to cityName, "countryName" to countryName, "timeZone" to timeZone,
-        "lat" to lat, "lon" to lon, "h24" to h24, "seconds" to seconds,
+        "lat" to lat, "lon" to lon, "h24" to h24, "seconds" to seconds, "showWeather" to showWeather,
     )
 
     companion object {
@@ -45,6 +47,7 @@ data class ClockSettings(
             lon = (m["lon"] as? Number)?.toDouble() ?: base.lon,
             h24 = m["h24"] as? Boolean ?: base.h24,
             seconds = m["seconds"] as? Boolean ?: base.seconds,
+            showWeather = m["showWeather"] as? Boolean ?: base.showWeather,
         )
     }
 }
@@ -63,4 +66,22 @@ data class Units(val fahrenheit: Boolean = false, val inches: Boolean = false) {
 }
 
 /** What a weather widget renders: its settings plus the app-wide units. Also the preview state. */
-data class WeatherState(val settings: WeatherSettings, val units: Units)
+data class WeatherState(
+    val settings: WeatherSettings,
+    val units: Units,
+    /** Set by the edit page's preview, which renders with a fake id but should show this widget's cached weather. */
+    val previewWidgetId: Int? = null,
+    /** Widget lab only: draw this sample condition at this hour instead of real data. */
+    val debug: WidgetDebug? = null,
+)
+
+/** Widget lab overrides (debug builds). [condition] is ignored by the clock. */
+data class WidgetDebug(val condition: dev.amaan.amn.widgets.core.Condition, val hour: Int, val h24: Boolean? = null, val seed: Long? = null)
+
+/** Clock preview state: unsaved settings, plus optional lab overrides. */
+data class ClockPreview(
+    val settings: ClockSettings,
+    val debug: WidgetDebug? = null,
+    /** The clock being edited, so the preview can show its cached weather. */
+    val previewWidgetId: Int? = null,
+)

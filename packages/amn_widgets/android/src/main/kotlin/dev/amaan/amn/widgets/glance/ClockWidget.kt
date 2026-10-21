@@ -28,6 +28,8 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import dev.amaan.amn.widgets.core.WidgetPalette
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.width
 import androidx.glance.layout.padding
@@ -171,7 +173,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         ClockLayout.SMALL -> 32f
     }
     val available = (layout.w - 24f) * fit.k
-    val timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
+    var timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
     val artSize = fit.k * when (layout) {
         ClockLayout.TINY -> 40f
         ClockLayout.SQUARE -> 88f
@@ -183,6 +185,17 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     // A clear sky at dawn or dusk keeps the sun half below the bottom edge; everything else sits in the corner.
     val low = (phase == Phase.DAWN || phase == Phase.DUSK) && sky == Condition.CLEAR
     fun style(sp: Float, weight: FontWeight) = TextStyle(color = ink, fontSize = fit.sp(sp).sp, fontWeight = weight)
+
+    // Spare height in a square clock becomes the next hours' weather, not a gap between the labels and the time.
+    val fontScale = context.resources.configuration.fontScale
+    val textLine = { sp: Float -> sp * fit.k * fontScale * 1.3f }
+    val usedHeight = 20 * fit.k + textLine(15f) + textLine(11.5f) + timeSize + textLine(11f)
+    val hoursHeight = HOURS_ROW_DP * minOf(fit.k, HOURS_MAX_K)
+    val hoursCount = if (size.width.value >= 250) 6 else 4
+    // The time may shrink by up to 30% to make room for the row; beyond that, no row.
+    val shortBy = hoursHeight + 8 * fit.k - (size.height.value - usedHeight)
+    val showHours = square && weather != null && shortBy <= timeSize * .3f
+    if (showHours && shortBy > 0) timeSize -= shortBy
 
     Box(
         modifier = GlanceModifier.fillMaxSize()
@@ -197,7 +210,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         } else if (weather != null) {
             // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
             val z = artSize * .8f
-            val roomy = roomyArtSize(layout, size, fit, timeSize, pattern, z)
+            val roomy = roomyArtSize(layout, size, fit, timeSize + if (showHours) hoursHeight + 8 * fit.k else 0f, pattern, z)
             if (roomy != null) {
                 // Room to spare: a bigger image that runs just slightly off the top-right corner,
                 // so it fills the space without being cut off much.
@@ -244,6 +257,10 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
                     if (!square && weather != null) WeatherBit(weather, units, ::style, 10.5f)
                 }
             }
+            if (showHours && weather != null) {
+                Spacer(GlanceModifier.height(k(8f)))
+                ClockHours(weather, units, pal, Fit(minOf(fit.k, HOURS_MAX_K)), s.h24, hoursCount)
+            }
         }
     }
 }
@@ -271,6 +288,34 @@ private fun roomyArtSize(layout: ClockLayout, size: DpSize, fit: Fit, timeSize: 
             if (above >= z * .6f) minOf(above / visible, size.width.value * .6f, z * 1.8f) else null
         }
         ClockLayout.TINY -> null
+    }
+}
+
+/** Height of the clock's hours row at design scale. */
+private const val HOURS_ROW_DP = 50f
+
+/** The hours row grows with the widget only up to this scale, so it stays a supporting detail. */
+private const val HOURS_MAX_K = 1.25f
+
+/** The city's next hours (hour, condition, temperature) in a soft panel, like the weather widget's strip. [fit] is the row's own, capped scale. */
+@Composable
+private fun ClockHours(f: Forecast, units: Units, pal: WidgetPalette, fit: Fit, h24: Boolean, count: Int) {
+    val k = fit::dp
+    val ink = ColorProvider(Color(pal.ink))
+    Row(
+        GlanceModifier.fillMaxWidth().height(k(HOURS_ROW_DP)).background(ColorProvider(Color(pal.ink).copy(alpha = .11f)))
+            .cornerRadius(k(14f)).padding(vertical = k(4f)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        f.hourly.drop(1).take(count).forEach { h ->
+            val phase = TimeOfDay.phase(h.hour * 60, f.sunriseMin, f.sunsetMin)
+            Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                val label = if (h24) "%02d".format(h.hour) else "${if (h.hour % 12 == 0) 12 else h.hour % 12} ${if (h.hour < 12) "AM" else "PM"}"
+                Text(label, style = TextStyle(color = ink, fontSize = fit.sp(9.5f).sp, fontWeight = FontWeight.Medium), maxLines = 1)
+                Image(ImageProvider(Art.drawable(h.condition, phase)), null, GlanceModifier.size(k(15f)))
+                Numeral("${units.temp(h.tempC)}°", 13 * fit.k, pal.ink)
+            }
+        }
     }
 }
 

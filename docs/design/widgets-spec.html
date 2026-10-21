@@ -443,6 +443,12 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
         <ul>
           <li>Weather widget info: <code>minWidth/minHeight</code> for 2×1, <code>targetCellWidth/Height</code> 4×2, <code>resizeMode="horizontal|vertical"</code>.</li>
           <li>Clock widget info: minimum 1×1, target 2×2.</li>
+          <li><b>Spare space gets content, not gaps.</b> Launchers hand widgets slots of different proportions (One UI's are taller than the design's). Layouts are picked by shape and scaled to fill, and any height left over becomes useful content:
+            <ul>
+              <li><b>Weather 4×3 and 4×4:</b> extra forecast days (up to five).</li>
+              <li><b>Square clocks:</b> a row of the city's next hours. The time may shrink by up to 30% to make room for it.</li>
+            </ul>
+            Elements are never pinned to the top and bottom with empty space between them.</li>
           <li>Corner radius: <code>@android:dimen/system_app_widget_background_radius</code>. One UI applies its own widget corner rounding, so check that the drawable radius matches it on the phone.</li>
           <li>One UI's home screen grid is usually 4×5 or 5×5, so cells are wider than on a Pixel. Glance's responsive sizes take care of that, but check 4×2 on the real grid.</li>
         </ul>

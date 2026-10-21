@@ -20,7 +20,7 @@ object OpenMeteo {
             "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
             "precipitation_sum,snowfall_sum,sunrise,sunset" +
-            "&past_days=1&forecast_days=5&timezone=auto",
+            "&past_days=1&forecast_days=7&timezone=auto",
         BASE, lat, lon,
     )
 

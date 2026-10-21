@@ -179,7 +179,16 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
     val u = state.units
     // A new seed every two hours (offset per widget) rotates the line without flicker.
     val seed = debug?.seed ?: (System.currentTimeMillis() / 7_200_000L + appWidgetId)
-    val line = Summary.of(f, h24, deg = { "${u.temp(it)}°" }, maxLen = layout.maxSummary, seed = seed).text
+    val fontScale = context.resources.configuration.fontScale
+    val maxSummary = if (layout == WeatherLayout.SQUARE) squareChipChars(size, fit, fontScale) else layout.maxSummary
+    val line = Summary.of(f, h24, deg = { "${u.temp(it)}°" }, maxLen = maxSummary, seed = seed).text
+    // Spare height becomes forecast days rather than gaps: 4×3 gains rows when the slot is taller
+    // than the design's proportions, 4×4 shows up to five days.
+    val dayRows = when (layout) {
+        WeatherLayout.TALL -> ((size.height.value - layout.h * fit.k) / (DAY_ROW_DP * fit.k)).toInt()
+        WeatherLayout.LARGE -> 3 + ((size.height.value - layout.h * fit.k) / (DAY_ROW_DP * fit.k)).toInt()
+        else -> 0
+    }.coerceIn(0, f.days.size)
     fun t(c: Double) = "${u.temp(c)}°"
     val place = if (state.settings.useGps) cached?.placeName ?: "Current location" else state.settings.cityName
     val stale = live != null && System.currentTimeMillis() - f.fetchedAtEpochMs > WeatherWidget.STALE_MS
@@ -274,9 +283,9 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     }
                     Spacer(GlanceModifier.defaultWeight())
                     HourlyStrip(f, look, u, withPop = true, h24 = h24)
-                    if (layout == WeatherLayout.LARGE) {
+                    if (dayRows > 0) {
                         Spacer(GlanceModifier.defaultWeight())
-                        DailyRows(f, look, u, rowWidth = size.width - k(padH) * 2)
+                        DailyRows(f, look, u, rowWidth = size.width - k(padH) * 2, count = dayRows)
                     }
                 }
                 WeatherLayout.WIDE -> {
@@ -299,7 +308,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     // 2×2: the button sits bottom right, next to the summary chip.
                     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Box(GlanceModifier.background(look.fill).cornerRadius(k(14f)).padding(horizontal = k(10f), vertical = k(5f))) {
-                            Text(line, style = look.style(12f, FontWeight.Bold), maxLines = 1)
+                            Text(ellipsize(line, maxSummary), style = look.style(12f, FontWeight.Bold), maxLines = 1)
                         }
                         Spacer(GlanceModifier.defaultWeight())
                         RefreshControl(look, refresh, null, isPreview)
@@ -336,15 +345,16 @@ private fun HourlyStrip(f: Forecast, look: Look, u: Units, withPop: Boolean, h24
 }
 
 @Composable
-private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp) {
+private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp, count: Int) {
     val k = look.fit::dp
-    val all = f.days.flatMap { listOf(it.lowC, it.highC) }
+    val days = f.days.take(count)
+    val all = days.flatMap { listOf(it.lowC, it.highC) }
     val mn = all.min()
     val span = (all.max() - mn).coerceAtLeast(1.0)
     // Fixed columns: day 58, icon 18, chance 30, low 26, high 26, plus five 6dp gaps (188 in all).
     val barWidth = (rowWidth - k(188f)).coerceAtLeast(k(30f))
     Column(GlanceModifier.fillMaxWidth()) {
-        f.days.take(3).forEachIndexed { i, d ->
+        days.forEachIndexed { i, d ->
             Row(GlanceModifier.fillMaxWidth().padding(vertical = k(3f)), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (i == 0) "Tomorrow" else d.weekday, style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.width(k(58f)))
                 Spacer(GlanceModifier.width(k(6f)))
@@ -408,6 +418,19 @@ private fun RefreshControl(look: Look, ui: RefreshUi, label: String?, isPreview:
         style = TextStyle(color = tint, fontSize = look.fit.sp(if (label != null) 10.5f else 12f).sp, fontWeight = FontWeight.Bold),
         maxLines = 1,
     )
+}
+
+/** Height of one forecast day row at design scale (3 dp padding above and below an 18 dp row). */
+private const val DAY_ROW_DP = 24f
+
+/**
+ * How many characters the 2×2 summary chip can hold next to the refresh button, from the real
+ * width and font size, so the button never gets pushed off the edge.
+ */
+private fun squareChipChars(size: DpSize, fit: Fit, fontScale: Float): Int {
+    val content = size.width.value - 2 * 12 * fit.k - 30 * fit.k - 6 * fit.k - 20 * fit.k
+    val charWidth = 12 * fit.k * fontScale * .5f
+    return (content / charWidth).toInt().coerceIn(11, 19)
 }
 
 /** Glance can't ellipsize reliably, so long names are shortened here. */

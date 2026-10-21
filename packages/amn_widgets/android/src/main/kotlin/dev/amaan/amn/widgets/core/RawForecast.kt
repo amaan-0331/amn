@@ -78,7 +78,7 @@ object ForecastBuilder {
             hourly = hourly,
             today = day(di),
             yesterdayHighC = raw.dailyMax[di - 1],
-            days = (di + 1 until minOf(di + 4, raw.dailyTime.size)).map(::day),
+            days = (di + 1 until minOf(di + 6, raw.dailyTime.size)).map(::day), // up to 5 days ahead
             sunriseMin = minutesOf(raw.dailySunrise.getOrNull(di)) ?: (6 * 60 + 30),
             sunsetMin = minutesOf(raw.dailySunset.getOrNull(di)) ?: (18 * 60),
             fetchedAtEpochMs = raw.fetchedAtEpochMs,

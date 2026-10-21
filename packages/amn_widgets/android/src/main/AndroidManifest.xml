@@ -1,0 +1,46 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!-- Edit page for both widgets. Opened by the launcher when a widget is added,
+             and by a tap on the widget. Runs Flutter routes /widget/weather and /widget/clock. -->
+        <activity
+            android:name="dev.amaan.amn.widgets.config.WidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="dev.amaan.amn.widgetconfig"
+            android:theme="@style/AmnWidgets.ConfigTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name="dev.amaan.amn.widgets.glance.WeatherWidgetReceiver"
+            android:exported="true"
+            android:label="@string/amn_weather_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/amn_weather_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="dev.amaan.amn.widgets.glance.ClockWidgetReceiver"
+            android:exported="true"
+            android:label="@string/amn_clock_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/amn_clock_widget_info" />
+        </receiver>
+    </application>
+</manifest>

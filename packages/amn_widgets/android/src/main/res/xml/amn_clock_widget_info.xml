@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="70dp"
+    android:minHeight="70dp"
+    android:minResizeWidth="70dp"
+    android:minResizeHeight="70dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:configure="dev.amaan.amn.widgets.config.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewImage="@drawable/amn_clear_day"
+    android:description="@string/amn_clock_widget_description" />

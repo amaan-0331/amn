@@ -1,0 +1,6 @@
+<resources>
+    <string name="amn_weather_widget_label">Weather</string>
+    <string name="amn_weather_widget_description">Temperature, a one-line summary and the forecast for where you are.</string>
+    <string name="amn_clock_widget_label">City clock</string>
+    <string name="amn_clock_widget_description">The time in one city you choose.</string>
+</resources>

@@ -1,0 +1,6 @@
+<resources>
+    <color name="amn_config_background">#0E1016</color>
+    <style name="AmnWidgets.ConfigTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/amn_config_background</item>
+    </style>
+</resources>

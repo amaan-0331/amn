@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Live time for the widgets. Ticks on its own, so the widget never needs per-minute updates.
+     TODO: switch fontFamily to @font/barlow_condensed_bold once the font is bundled. -->
+<TextClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/amn_clock"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-condensed"
+    android:textStyle="bold"
+    android:includeFontPadding="false"
+    android:lineSpacingMultiplier="0.85" />

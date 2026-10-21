@@ -67,6 +67,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
                 condition = runCatching { Condition.valueOf((it["condition"] as? String ?: "partly").uppercase()) }.getOrDefault(Condition.PARTLY),
                 hour = (it["hour"] as? Number)?.toInt() ?: 12,
                 h24 = it["h24"] as? Boolean,
+                seed = (it["seed"] as? Number)?.toLong(),
             )
         }
         val dark = lab?.get("dark") as? Boolean

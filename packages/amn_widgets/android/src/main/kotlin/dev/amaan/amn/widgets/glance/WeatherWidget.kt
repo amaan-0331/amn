@@ -50,7 +50,6 @@ import dev.amaan.amn.widgets.core.Phase
 import dev.amaan.amn.widgets.core.Summary
 import dev.amaan.amn.widgets.core.TimeOfDay
 import dev.amaan.amn.widgets.core.WidgetPalette
-import dev.amaan.amn.widgets.core.english
 import dev.amaan.amn.widgets.data.ForecastCache
 import dev.amaan.amn.widgets.data.SampleForecast
 import dev.amaan.amn.widgets.data.Units
@@ -128,8 +127,8 @@ private class Look(val pal: WidgetPalette, val fit: Fit) {
 }
 
 /** The five weather layouts and their design sizes (dp). */
-internal enum class WeatherLayout(val w: Float, val h: Float) {
-    SMALL(140f, 70f), SQUARE(140f, 140f), WIDE(290f, 140f), TALL(290f, 215f), LARGE(290f, 290f);
+internal enum class WeatherLayout(val w: Float, val h: Float, val maxSummary: Int) {
+    SMALL(140f, 70f, 17), SQUARE(140f, 140f, 19), WIDE(290f, 140f, 22), TALL(290f, 215f, 24), LARGE(290f, 290f, 24);
 
     companion object {
         /** By width and shape: 4×2 is about twice as wide as tall, 4×3 a bit wider than tall. */
@@ -166,14 +165,16 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
         else -> cached?.raw?.let { ForecastBuilder.localNow(it, now) }?.toLocalTime() ?: LocalTime.now()
     }
     val zone = cached?.raw?.timeZone?.takeIf { live != null }
-
     val layout = WeatherLayout.of(size)
+
     val fit = fitFor(size, layout.w, layout.h)
     val phase = TimeOfDay.phase(localNow.hour * 60 + localNow.minute, f.sunriseMin, f.sunsetMin)
     val look = Look(Palettes.of(f.condition, phase, context.isNightMode()), fit)
     val h24 = debug?.h24 ?: DateFormat.is24HourFormat(context)
-    val line = Summary.of(f).english(h24)
     val u = state.units
+    // A new seed every two hours (offset per widget) rotates the line without flicker.
+    val seed = debug?.seed ?: (System.currentTimeMillis() / 7_200_000L + appWidgetId)
+    val line = Summary.of(f, h24, deg = { "${u.temp(it)}°" }, maxLen = layout.maxSummary, seed = seed).text
     fun t(c: Double) = "${u.temp(c)}°"
     val place = if (state.settings.useGps) cached?.placeName ?: "Current location" else state.settings.cityName
     val stale = live != null && System.currentTimeMillis() - f.fetchedAtEpochMs > WeatherWidget.STALE_MS
@@ -200,8 +201,8 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
         Column(
             GlanceModifier.fillMaxSize().padding(
                 start = k(padH), end = k(padH),
-                top = k(if (big) 13f else if (wide) 11f else if (layout == WeatherLayout.SQUARE) 12f else 9f),
-                bottom = k(if (big) 13f else if (wide) 9f else if (layout == WeatherLayout.SQUARE) 12f else 9f),
+                top = k(if (big) 13f else if (wide) 11f else if (layout == WeatherLayout.SQUARE) 12f else 8f),
+                bottom = k(if (big) 13f else if (wide) 9f else if (layout == WeatherLayout.SQUARE) 12f else 7f),
             ),
         ) {
             val metaSize = when {
@@ -271,9 +272,9 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                 }
                 WeatherLayout.SMALL -> {
                     Spacer(GlanceModifier.defaultWeight())
-                    look.Num(t(f.nowTempC), 34f)
+                    look.Num(t(f.nowTempC), 30f)
                     Spacer(GlanceModifier.defaultWeight())
-                    Text(ellipsize(line, 17), style = look.style(11.5f, FontWeight.Bold), maxLines = 1)
+                    Text(line, style = look.style(11.5f, FontWeight.Bold), maxLines = 1)
                 }
             }
         }

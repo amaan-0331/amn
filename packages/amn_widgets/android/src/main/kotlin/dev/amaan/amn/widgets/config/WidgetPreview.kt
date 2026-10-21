@@ -76,7 +76,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
             val ctx = if (dark == null) frame.context else frame.context.withNightMode(dark)
             val rv = runCatching {
                 if (kind == "clock") {
-                    ClockWidget().compose(ctx, size = size, state = ClockPreview(ClockSettings.from(settings), debug))
+                    ClockWidget().compose(ctx, size = size, state = ClockPreview(ClockSettings.from(settings), debug, previewWidgetId = widgetId))
                 } else {
                     WeatherWidget().compose(ctx, size = size, state = WeatherState(WeatherSettings.from(settings), Units.from(settings), previewWidgetId = widgetId, debug = debug))
                 }

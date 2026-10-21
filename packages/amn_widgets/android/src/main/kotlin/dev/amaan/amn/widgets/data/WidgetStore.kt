@@ -32,13 +32,14 @@ class WidgetStore(context: Context) {
         // New clocks start from the phone's 12/24h setting.
         h24 = prefs.getBoolean("c.$id.h24", DateFormat.is24HourFormat(appContext)),
         seconds = prefs.getBoolean("c.$id.secs", false),
+        showWeather = prefs.getBoolean("c.$id.wx", true),
     )
 
     fun saveClock(id: Int, s: ClockSettings) = prefs.edit()
         .putString("c.$id.city", s.cityName).putString("c.$id.country", s.countryName)
         .putString("c.$id.tz", s.timeZone)
         .putString("c.$id.lat", s.lat?.toString()).putString("c.$id.lon", s.lon?.toString())
-        .putBoolean("c.$id.h24", s.h24).putBoolean("c.$id.secs", s.seconds)
+        .putBoolean("c.$id.h24", s.h24).putBoolean("c.$id.secs", s.seconds).putBoolean("c.$id.wx", s.showWeather)
         .apply()
 
     fun units() = Units(prefs.getBoolean("units.f", false), prefs.getBoolean("units.in", false))

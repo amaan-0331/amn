@@ -45,6 +45,12 @@ import dev.amaan.amn.widgets.core.SunDay
 import dev.amaan.amn.widgets.core.TimeOfDay
 import java.time.LocalDate
 import dev.amaan.amn.widgets.data.ClockPreview
+import dev.amaan.amn.widgets.data.ClockWeather
+import dev.amaan.amn.widgets.data.SampleForecast
+import dev.amaan.amn.widgets.data.Units
+import dev.amaan.amn.widgets.core.Forecast
+import dev.amaan.amn.widgets.core.ForecastBuilder
+import androidx.glance.layout.Row
 import dev.amaan.amn.widgets.data.ClockSchedule
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.WidgetStore
@@ -64,12 +70,23 @@ class ClockWidget : GlanceAppWidget() {
         val initial = store.clock(appWidgetId)
         if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && initial.timeZone != null) {
             ClockSchedule.scheduleNext(context, appWidgetId, initial)
+            // Keeps the hourly weather job alive for clocks added before it existed (KEEP: no-op if scheduled).
+            if (initial.showWeather) ClockWeather.ensure(context)
         }
         provideContent {
             val glanceState = LocalState.current
             glanceState.renderVersion()
             val preview = glanceState as? ClockPreview
-            ClockContent(preview?.settings ?: store.clock(appWidgetId), appWidgetId, preview?.debug?.hour)
+            val settings = preview?.settings ?: store.clock(appWidgetId)
+            val debug = preview?.debug
+            val weather = when {
+                !settings.showWeather -> null
+                debug != null -> SampleForecast.of(debug.condition, debug.hour)
+                else -> ClockWeather.cache(context).load(preview?.previewWidgetId ?: appWidgetId)
+                    ?.let { ForecastBuilder.build(it.raw, Instant.now()) }
+                    ?.takeIf { System.currentTimeMillis() - it.fetchedAtEpochMs < ClockWeather.MAX_AGE_MS }
+            }
+            ClockContent(settings, appWidgetId, debug?.hour, weather, store.units())
         }
     }
 }
@@ -77,11 +94,23 @@ class ClockWidget : GlanceAppWidget() {
 class ClockWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ClockWidget()
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        ClockWeather.ensure(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        ClockWeather.cancel(context)
+    }
+
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
         val store = WidgetStore(context)
+        val cache = ClockWeather.cache(context)
         appWidgetIds.forEach {
             store.remove(it)
+            cache.remove(it)
             ClockSchedule.cancel(context, it)
         }
     }
@@ -104,7 +133,7 @@ internal enum class ClockLayout(val w: Float, val h: Float) {
 }
 
 @Composable
-private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = null) {
+private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, weather: Forecast?, units: Units) {
     val context = LocalContext.current
     val size = LocalSize.current
     val zone = s.zoneOrPhone()
@@ -169,7 +198,12 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = k(12f), vertical = k(if (square) 10f else 7f))) {
             val title = s.cityName ?: "Choose a city"
             Text(if (tiny) cityCode(title) else title, style = style(if (square) 15f else 11.5f, FontWeight.Bold), maxLines = 1)
-            if (square) Text(phaseLabel, style = style(11.5f, FontWeight.Medium))
+            if (square) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(phaseLabel, style = style(11.5f, FontWeight.Medium))
+                    if (weather != null) WeatherBit(weather, units, phase, fit, ::style, 11.5f)
+                }
+            }
             Spacer(GlanceModifier.defaultWeight())
             // The time is part of the layout, so it's sized in dp and ignores the font-size setting.
             // A fixed height stops AndroidRemoteViews from taking all remaining space.
@@ -178,9 +212,23 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
                 GlanceModifier.height((timeSize * if (tiny) 2.05f else 1.0f).dp),
                 unit = android.util.TypedValue.COMPLEX_UNIT_DIP,
             )
-            if (!tiny) Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
+            if (!tiny) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
+                    // 2×1 has no line under the city, so its weather sits next to the offset.
+                    if (!square && weather != null) WeatherBit(weather, units, phase, fit, ::style, 10.5f)
+                }
+            }
         }
     }
+}
+
+/** " · [icon] 13°": the city's current condition and temperature, after another label. */
+@Composable
+private fun WeatherBit(f: Forecast, units: Units, phase: Phase, fit: Fit, style: (Float, FontWeight) -> TextStyle, sp: Float) {
+    Text(" · ", style = style(sp, FontWeight.Medium))
+    Image(ImageProvider(Art.drawable(f.condition, phase)), null, GlanceModifier.size(fit.dp(sp + 3f)))
+    Text(" ${units.temp(f.nowTempC)}°", style = style(sp, FontWeight.Bold), maxLines = 1)
 }
 
 /** "NY" for New York, "TOK" for Tokyo: initials for several words, else the first three letters. */

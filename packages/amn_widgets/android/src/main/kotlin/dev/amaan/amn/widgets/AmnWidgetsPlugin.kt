@@ -8,6 +8,7 @@ import dev.amaan.amn.widgets.config.PreviewViewFactory
 import dev.amaan.amn.widgets.config.WidgetConfigActivity
 import dev.amaan.amn.widgets.core.CityOffset
 import dev.amaan.amn.widgets.data.ClockSchedule
+import dev.amaan.amn.widgets.data.ClockWeather
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.ForecastCache
 import dev.amaan.amn.widgets.data.WeatherRefresher
@@ -69,7 +70,7 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
             "getSettings" -> {
                 val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
                 val settings = if (call.argument<String>("kind") == "clock") {
-                    store.clock(id).toMap()
+                    store.clock(id).toMap() + mapOf("fetchedAt" to ClockWeather.cache(appContext).fetchedAt(id))
                 } else {
                     val cache = ForecastCache(appContext)
                     store.weather(id).toMap() + mapOf("fetchedAt" to cache.fetchedAt(id), "placeName" to cache.placeName(id))
@@ -94,6 +95,10 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                         store.saveClock(id, clock)
                         glanceId?.let { ClockWidget().redraw(appContext, it) }
                         if (clock.timeZone != null) ClockSchedule.scheduleNext(appContext, id, clock)
+                        if (clock.showWeather) {
+                            ClockWeather.ensure(appContext)
+                            ClockWeather.now(appContext)
+                        }
                     } else {
                         store.saveWeather(id, WeatherSettings.from(settings, store.weather(id)))
                         store.saveUnits(Units.from(settings, store.units()))

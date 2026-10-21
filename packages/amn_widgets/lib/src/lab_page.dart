@@ -31,6 +31,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   late bool _fahrenheit = widget.query['f'] == '1';
   late bool _h24 = widget.query['h24'] != '0';
   late bool _seconds = widget.query['secs'] == '1';
+  late bool _clockWeather = widget.query['cw'] != '0';
   late String _zone = _pick(widget.query['city'], _clockCities.keys.toList(), 'Asia/Tokyo');
   late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both'], 'both');
   late bool _oneUi = widget.query['grid'] == 'oneui';
@@ -55,7 +56,16 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
 
   Map<String, Object?> get _clockSettings {
     final c = _clockCities[_zone]!;
-    return {'cityName': c.$1, 'countryName': c.$2, 'timeZone': _zone, 'lat': c.$3, 'lon': c.$4, 'h24': _h24, 'seconds': _seconds};
+    return {
+      'cityName': c.$1,
+      'countryName': c.$2,
+      'timeZone': _zone,
+      'lat': c.$3,
+      'lon': c.$4,
+      'h24': _h24,
+      'seconds': _seconds,
+      'showWeather': _clockWeather,
+    };
   }
 
   @override
@@ -88,6 +98,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
             FilterChip(label: const Text('°F'), selected: _fahrenheit, onSelected: (v) => setState(() => _fahrenheit = v)),
             FilterChip(label: const Text('24h'), selected: _h24, onSelected: (v) => setState(() => _h24 = v)),
             FilterChip(label: const Text('Seconds'), selected: _seconds, onSelected: (v) => setState(() => _seconds = v)),
+            FilterChip(label: const Text('Clock weather'), selected: _clockWeather, onSelected: (v) => setState(() => _clockWeather = v)),
           ]),
           const SizedBox(height: 6),
           Wrap(spacing: 6, runSpacing: 6, children: [

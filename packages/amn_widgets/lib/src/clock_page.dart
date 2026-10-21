@@ -22,6 +22,8 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
   City? _city;
   bool _h24 = true;
   bool _seconds = false;
+  bool _showWeather = true;
+  int? _weatherAt;
   PreviewSize _size = clockSizes[2];
   ZoneInfo? _zone;
   Timer? _tick;
@@ -57,6 +59,8 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
       }
       _h24 = m['h24'] as bool? ?? true;
       _seconds = m['seconds'] as bool? ?? false;
+      _showWeather = m['showWeather'] as bool? ?? true;
+      _weatherAt = m['fetchedAt'] as int?;
       _loaded = true;
     });
     await _describe();
@@ -85,6 +89,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
         'lon': _city?.lon,
         'h24': _h24,
         'seconds': _seconds,
+        'showWeather': _showWeather,
       };
 
   @override
@@ -142,6 +147,14 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
                   _describe();
                 },
               ),
+            ),
+            SwitchListTile(
+              title: const Text('Show weather'),
+              subtitle: Text(_showWeather && _weatherAt != null
+                  ? '${updatedLabel(_weatherAt)} · updates every hour · Open-Meteo'
+                  : "The city's condition and temperature · updates every hour"),
+              value: _showWeather,
+              onChanged: (v) => setState(() => _showWeather = v),
             ),
             SwitchListTile(
               title: const Text('Show seconds'),

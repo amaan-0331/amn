@@ -13,7 +13,10 @@ import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceModifier
+import androidx.compose.ui.unit.dp
 import androidx.glance.LocalContext
+import androidx.glance.layout.height
+import androidx.glance.layout.width
 import androidx.glance.action.Action
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.action.actionStartActivity
@@ -35,6 +38,21 @@ internal object Art {
             Condition.STORM -> R.drawable.amn_storm
             Condition.SNOW -> R.drawable.amn_snow
             Condition.FOG -> R.drawable.amn_fog
+        }
+    }
+}
+
+/**
+ * The top part of an art image, for a sun sitting on the bottom edge (dawn and dusk).
+ * Glance can't place an image past a widget's bounds, so the crop is made here.
+ */
+internal object Horizon {
+    private val cache = HashMap<Int, Bitmap>()
+
+    fun topHalf(context: Context, resId: Int, fraction: Float = .55f): Bitmap = synchronized(cache) {
+        cache.getOrPut(resId) {
+            val full = android.graphics.BitmapFactory.decodeResource(context.resources, resId)
+            Bitmap.createBitmap(full, 0, 0, full.width, (full.height * fraction).toInt())
         }
     }
 }
@@ -86,15 +104,47 @@ internal fun ClockText(zone: String?, pattern: String, sizeSp: Float, color: Int
     AndroidRemoteViews(rv, modifier)
 }
 
-/** Static text in Barlow Condensed (temperatures). */
-@Composable
-internal fun DisplayText(text: String, sizeSp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
-    val context = LocalContext.current
-    val rv = RemoteViews(context.packageName, R.layout.amn_display_text).apply {
-        setTextViewText(R.id.amn_display, text)
-        setTextColor(R.id.amn_display, color)
-        setTextViewTextSize(R.id.amn_display, TypedValue.COMPLEX_UNIT_SP, sizeSp)
+/**
+ * Numbers in Barlow Condensed, drawn to a bitmap cropped to the glyphs.
+ * Launchers inflate widgets with a restricted context that ignores @font resources,
+ * so a TextView can't show the bundled font on the home screen.
+ */
+internal object Numerals {
+    private val cache = object : android.util.LruCache<String, Bitmap>(48) {}
+    private var typeface: android.graphics.Typeface? = null
+
+    fun render(context: Context, text: String, sizeSp: Float, color: Int): Bitmap {
+        val key = "$text|$sizeSp|$color"
+        cache.get(key)?.let { return it }
+        val tf = typeface ?: context.resources.getFont(R.font.amn_barlow_condensed_bold).also { typeface = it }
+        val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, context.resources.displayMetrics)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.typeface = tf
+            textSize = px
+            this.color = color
+        }
+        // Height from the digits' ink (so every number lines up), width from the text's advance.
+        val digits = android.graphics.Rect().also { paint.getTextBounds("0123456789", 0, 10, it) }
+        val pad = (px * .04f).toInt().coerceAtLeast(1)
+        val width = paint.measureText(text).toInt().coerceAtLeast(1) + pad * 2
+        val height = digits.height() + pad * 2
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        Canvas(bmp).drawText(text, pad.toFloat(), (pad - digits.top).toFloat(), paint)
+        cache.put(key, bmp)
+        return bmp
     }
-    AndroidRemoteViews(rv, modifier)
 }
 
+/** A number in Barlow Condensed at [sizeSp]; its box is exactly the digit height. */
+@Composable
+internal fun Numeral(text: String, sizeSp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val bmp = Numerals.render(context, text, sizeSp, color)
+    val density = context.resources.displayMetrics.density
+    androidx.glance.Image(
+        provider = androidx.glance.ImageProvider(bmp),
+        contentDescription = text,
+        modifier = modifier.width((bmp.width / density).dp).height((bmp.height / density).dp),
+        contentScale = androidx.glance.layout.ContentScale.Fit,
+    )
+}

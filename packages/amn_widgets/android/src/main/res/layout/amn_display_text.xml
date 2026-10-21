@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Big numerals in Barlow Condensed. Glance's Text can only use system fonts. -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/amn_display"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:fontFamily="@font/amn_barlow_condensed_bold"
-    android:includeFontPadding="false"
-    android:maxLines="1" />

@@ -33,7 +33,15 @@ const clockSizes = [
 /// The real Glance widget, rendered natively and shown through a platform view.
 /// Taps are blocked so the widget's own tap action can't fire.
 class WidgetPreview extends StatefulWidget {
-  const WidgetPreview({super.key, required this.kind, required this.widgetId, required this.size, required this.settings, this.revision = 0});
+  const WidgetPreview({
+    super.key,
+    required this.kind,
+    required this.widgetId,
+    required this.size,
+    required this.settings,
+    this.revision = 0,
+    this.debug,
+  });
 
   final String kind;
   final int widgetId;
@@ -42,6 +50,9 @@ class WidgetPreview extends StatefulWidget {
 
   /// Bump to re-render with the same settings (for example after new weather arrives).
   final int revision;
+
+  /// Widget lab overrides: {'condition': 'rain', 'hour': 21, 'dark': true}.
+  final Map<String, Object?>? debug;
 
   @override
   State<WidgetPreview> createState() => _WidgetPreviewState();
@@ -56,13 +67,14 @@ class _WidgetPreviewState extends State<WidgetPreview> {
         'width': widget.size.width,
         'height': widget.size.height,
         'settings': widget.settings,
+        if (widget.debug != null) 'debug': widget.debug,
       };
 
   @override
   void didUpdateWidget(WidgetPreview old) {
     super.didUpdateWidget(old);
     final id = _viewId;
-    if (id != null && (old.size != widget.size || old.revision != widget.revision || !mapEquals(old.settings, widget.settings))) {
+    if (id != null && (old.size != widget.size || old.revision != widget.revision || !mapEquals(old.settings, widget.settings) || !mapEquals(old.debug, widget.debug))) {
       WidgetBridge.previewChanged(id, _args);
     }
   }

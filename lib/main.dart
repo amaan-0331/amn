@@ -1,4 +1,5 @@
 import 'package:amn_widgets/amn_widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const AmnApp());
@@ -52,6 +53,13 @@ class HomePage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
+              if (kDebugMode) ...[
+                const SizedBox(height: 24),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/widget/lab'),
+                  child: const Text('Widget lab'),
+                ),
+              ],
             ],
           ),
         ),

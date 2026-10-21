@@ -28,6 +28,8 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.height
+import androidx.glance.layout.width
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
@@ -39,6 +41,10 @@ import dev.amaan.amn.widgets.core.ClockTimeline
 import dev.amaan.amn.widgets.core.Condition
 import dev.amaan.amn.widgets.core.Palettes
 import dev.amaan.amn.widgets.core.Phase
+import dev.amaan.amn.widgets.core.SunDay
+import dev.amaan.amn.widgets.core.TimeOfDay
+import java.time.LocalDate
+import dev.amaan.amn.widgets.data.ClockPreview
 import dev.amaan.amn.widgets.data.ClockSchedule
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.WidgetStore
@@ -67,8 +73,8 @@ class ClockWidget : GlanceAppWidget() {
         provideContent {
             val glanceState = LocalState.current
             glanceState.renderVersion()
-            val settings = glanceState as? ClockSettings ?: store.clock(appWidgetId)
-            ClockContent(settings, appWidgetId)
+            val preview = glanceState as? ClockPreview
+            ClockContent(preview?.settings ?: store.clock(appWidgetId), appWidgetId, preview?.debug?.hour)
         }
     }
 }
@@ -87,12 +93,17 @@ class ClockWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
+private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = null) {
     val context = LocalContext.current
     val size = LocalSize.current
     val zone = s.zoneOrPhone()
     val now = Instant.now()
-    val phase = ClockTimeline.phaseAt(now, zone, s.sun())
+    val phase = if (debugHour != null) {
+        val sun = s.sun()(LocalDate.now(zone)) ?: SunDay(6 * 60 + 30, 18 * 60)
+        TimeOfDay.phase(debugHour * 60, sun.sunriseMin, sun.sunsetMin)
+    } else {
+        ClockTimeline.phaseAt(now, zone, s.sun())
+    }
     val pal = Palettes.of(Condition.CLEAR, phase, context.isNightMode())
     val ink = ColorProvider(Color(pal.ink))
     val offset = CityOffset.between(zone, ZoneId.systemDefault(), now).label
@@ -107,15 +118,16 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
         if (withSeconds) append(":ss")
         if (!s.h24 && !tiny) append(" a")
     }
+    // Sized so "HH:mm:ss" and "h:mm:ss a" still fit on one line.
     val timeSize = when {
-        tiny -> 28f
-        square -> 54f
-        else -> 38f
+        tiny -> 23f
+        square -> if (withSeconds || !s.h24) 38f else 52f
+        else -> if (withSeconds || !s.h24) 28f else 36f
     }
     val artSize = when {
-        tiny -> 44
-        square -> 96
-        else -> 64
+        tiny -> 40
+        square -> 88
+        else -> 56
     }
     val phaseLabel = when (phase) {
         Phase.DAWN -> "Dawn"; Phase.DAY -> "Day"; Phase.DUSK -> "Dusk"; Phase.NIGHT -> "Night"
@@ -130,18 +142,30 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
             .clickable(openEditPage(context, appWidgetId, "clock")),
         contentAlignment = if (low) Alignment.BottomEnd else Alignment.TopEnd,
     ) {
-        Image(ImageProvider(Art.drawable(Condition.CLEAR, phase)), contentDescription = null, modifier = GlanceModifier.size((artSize * if (low) .7 else 1.0).dp))
-        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp)) {
+        if (low) {
+            val sun = Horizon.topHalf(context, Art.drawable(Condition.CLEAR, phase))
+            Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8).dp).height((artSize * .8 * .55).dp))
+        } else {
+            Image(ImageProvider(Art.drawable(Condition.CLEAR, phase)), null, GlanceModifier.size(artSize.dp))
+        }
+        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 12.dp, vertical = if (square) 10.dp else 7.dp)) {
             val title = s.cityName ?: "Choose a city"
             Text(
-                if (tiny) title.take(3).uppercase() else title,
+                if (tiny) cityCode(title) else title,
                 style = TextStyle(color = ink, fontSize = if (square) 15.sp else 11.5.sp, fontWeight = FontWeight.Bold),
                 maxLines = 1,
             )
             if (square) Text(phaseLabel, style = TextStyle(color = ink, fontSize = 11.5.sp, fontWeight = FontWeight.Medium))
             Spacer(GlanceModifier.defaultWeight())
-            ClockText(zone.id, pattern, timeSize, pal.ink)
-            if (!tiny) Text(offset, style = TextStyle(color = ink, fontSize = 11.sp, fontWeight = FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(top = 2.dp))
+            // AndroidRemoteViews otherwise takes all remaining height and pushes the offset line out.
+            ClockText(zone.id, pattern, timeSize, pal.ink, GlanceModifier.height((timeSize * if (tiny) 1.75f else .95f).dp))
+            if (!tiny) Text(offset, style = TextStyle(color = ink, fontSize = if (square) 11.sp else 10.5.sp, fontWeight = FontWeight.Medium), maxLines = 1)
         }
     }
+}
+
+/** "NY" for New York, "TOK" for Tokyo: initials for several words, else the first three letters. */
+internal fun cityCode(name: String): String {
+    val words = name.split(' ', '-').filter { it.isNotBlank() }
+    return (if (words.size > 1) words.joinToString("") { it.take(1) } else name.take(3)).uppercase()
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'clock_page.dart';
+import 'lab_page.dart';
 import 'weather_page.dart';
 
 /// Handles `/widget/weather?id=..&mode=add|edit` and `/widget/clock?...`,
-/// which `WidgetConfigActivity` opens. Returns null for any other route.
+/// which `WidgetConfigActivity` opens, and the debug-only `/widget/lab`.
+/// Returns null for any other route.
 Route<void>? widgetConfigRoute(RouteSettings settings) {
   final uri = Uri.tryParse(settings.name ?? '');
   if (uri == null || uri.pathSegments.length != 2 || uri.pathSegments.first != 'widget') return null;
@@ -13,6 +15,7 @@ Route<void>? widgetConfigRoute(RouteSettings settings) {
   final Widget? page = switch (uri.pathSegments[1]) {
     'weather' => WeatherConfigPage(widgetId: id, adding: adding),
     'clock' => ClockConfigPage(widgetId: id, adding: adding),
+    'lab' => WidgetLabPage(query: uri.queryParameters),
     _ => null,
   };
   if (page == null) return null;

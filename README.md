@@ -31,6 +31,20 @@ Settings → Battery → Background usage limits → Never sleeping apps, so ref
 
 Design spec: `docs/design/widgets-spec.html`.
 
+## Widget lab (debug builds)
+
+The home screen has a **Widget lab** button. It renders every widget size through the
+real preview (inflated like a launcher does), with overrides for condition, hour, dark mode,
+units, 12/24h, seconds and clock city. Open it in any state from the command line:
+
+```
+adb shell am start -n dev.amaan.amn/.MainActivity --es route "'/widget/lab?cond=rain&hour=21&dark=1&kind=weather'"
+```
+
+Query keys: `cond` (clear, partly, cloudy, rain, storm, snow, fog), `hour` (0–23), `dark` (0/1),
+`f` (1 for °F), `h24` (0/1), `secs` (0/1), `city` (Asia/Tokyo, America/New_York, Europe/London,
+Asia/Dubai), `kind` (weather, clock, both). Grab the screen with `adb exec-out screencap -p > lab.png`.
+
 ## Credits
 
 - Weather icons: [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) © Microsoft, MIT License

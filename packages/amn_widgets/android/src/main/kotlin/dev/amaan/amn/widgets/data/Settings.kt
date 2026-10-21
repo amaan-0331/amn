@@ -68,4 +68,12 @@ data class WeatherState(
     val units: Units,
     /** Set by the edit page's preview, which renders with a fake id but should show this widget's cached weather. */
     val previewWidgetId: Int? = null,
+    /** Widget lab only: draw this sample condition at this hour instead of real data. */
+    val debug: WidgetDebug? = null,
 )
+
+/** Widget lab overrides (debug builds). [condition] is ignored by the clock. */
+data class WidgetDebug(val condition: dev.amaan.amn.widgets.core.Condition, val hour: Int)
+
+/** Clock preview state: unsaved settings, plus optional lab overrides. */
+data class ClockPreview(val settings: ClockSettings, val debug: WidgetDebug? = null)

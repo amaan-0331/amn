@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Live time for the widgets. Ticks on its own, so the widget never needs per-minute updates. -->
+<!-- Live time for the widgets. Ticks on its own, so the widget never needs per-minute updates.
+     Launchers inflate widgets with a restricted context, which ignores @font resources,
+     so this uses the system's condensed face. Static numbers are drawn as bitmaps instead. -->
 <TextClock xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/amn_clock"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:fontFamily="@font/amn_barlow_condensed_bold"
+    android:fontFamily="sans-serif-condensed"
+    android:textStyle="bold"
     android:includeFontPadding="false"
     android:lineSpacingMultiplier="0.85" />

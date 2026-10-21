@@ -133,11 +133,20 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
     val context = LocalContext.current
     val size = LocalSize.current
     val now = Instant.now()
-    val cached = ForecastCache(context).load(appWidgetId)
+    val debug = state.debug
+    val cached = if (debug == null) ForecastCache(context).load(appWidgetId) else null
     val live = cached?.let { ForecastBuilder.build(it.raw, now) }
     // Real widgets wait for data; the preview shows sample weather until the first update.
-    val f: Forecast = live ?: if (isPreview) SampleForecast.at(LocalTime.now().hour) else return LoadingContent(state, appWidgetId)
-    val localNow = cached?.raw?.let { ForecastBuilder.localNow(it, now) }?.toLocalTime() ?: LocalTime.now()
+    val f: Forecast = when {
+        debug != null -> SampleForecast.of(debug.condition, debug.hour)
+        live != null -> live
+        isPreview -> SampleForecast.at(LocalTime.now().hour)
+        else -> return LoadingContent(state, appWidgetId)
+    }
+    val localNow = when {
+        debug != null -> LocalTime.of(debug.hour, 0)
+        else -> cached?.raw?.let { ForecastBuilder.localNow(it, now) }?.toLocalTime() ?: LocalTime.now()
+    }
     val zone = cached?.raw?.timeZone?.takeIf { live != null }
 
     val phase = TimeOfDay.phase(localNow.hour * 60 + localNow.minute, f.sunriseMin, f.sunsetMin)
@@ -168,7 +177,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
             tall -> Image(art, null, GlanceModifier.size(96.dp))
             else -> Image(art, null, GlanceModifier.size(60.dp).padding(2.dp))
         }
-        Column(GlanceModifier.fillMaxSize().padding(horizontal = if (big) 14.dp else 12.dp, vertical = if (big) 12.dp else 10.dp)) {
+        Column(GlanceModifier.fillMaxSize().padding(horizontal = if (big) 14.dp else 12.dp, vertical = if (big) 12.dp else if (tall) 10.dp else 8.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(place, style = look.style(if (big) 12f else 11f, FontWeight.Bold), maxLines = 1)
                 Text("  ", style = look.style(11f))
@@ -183,7 +192,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                 big -> {
                     Text(line, style = look.style(18f, FontWeight.Bold), maxLines = 1, modifier = GlanceModifier.padding(top = 2.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
-                        DisplayText(t(f.nowTempC), 68f, look.pal.ink)
+                        Numeral(t(f.nowTempC), 68f, look.pal.ink)
                         Column(GlanceModifier.padding(start = 10.dp, bottom = 4.dp)) {
                             Text(CONDITION_LABEL.getValue(f.condition), style = look.style(11.5f, FontWeight.Bold))
                             Text("Feels ${t(f.feelsLikeC)}", style = look.style(11.5f))
@@ -203,7 +212,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                 }
                 wide -> {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        DisplayText(t(f.nowTempC), 52f, look.pal.ink)
+                        Numeral(t(f.nowTempC), 52f, look.pal.ink)
                         Column(GlanceModifier.padding(start = 10.dp, bottom = 2.dp).width(124.dp)) {
                             Text(line, style = look.style(14f, FontWeight.Bold), maxLines = 2)
                             Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)} · Feels ${t(f.feelsLikeC)}", style = look.style(10.5f), maxLines = 1)
@@ -214,7 +223,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                 }
                 tall -> {
                     Spacer(GlanceModifier.defaultWeight())
-                    DisplayText(t(f.nowTempC), 58f, look.pal.ink)
+                    Numeral(t(f.nowTempC), 58f, look.pal.ink)
                     Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f, FontWeight.Medium), maxLines = 1)
                     Spacer(GlanceModifier.height(6.dp))
                     Box(GlanceModifier.background(look.fill).cornerRadius(12.dp).padding(horizontal = 10.dp, vertical = 5.dp)) {
@@ -222,7 +231,7 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     }
                 }
                 else -> {
-                    DisplayText(t(f.nowTempC), 34f, look.pal.ink)
+                    Numeral(t(f.nowTempC), 34f, look.pal.ink)
                     Spacer(GlanceModifier.defaultWeight())
                     Text(line, style = look.style(11.5f, FontWeight.Bold), maxLines = 1)
                 }

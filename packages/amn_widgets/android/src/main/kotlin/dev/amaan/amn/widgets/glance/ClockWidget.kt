@@ -60,7 +60,6 @@ import dev.amaan.amn.widgets.data.sun
 import dev.amaan.amn.widgets.data.zoneOrPhone
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 class ClockWidget : GlanceAppWidget() {
     // Exact: the layout is picked from the real size and shape (see ClockLayout.of).
@@ -211,12 +210,9 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         } else if (weather != null) {
             // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
             val z = artSize * .8f
-            // The art uses the width of the time as shown now (9:41 is a digit shorter than 12:41);
-            // the clock redraws when the hour gains or loses a digit.
-            val singleDigitHour = !s.h24 && ZonedDateTime.now(zone).hour % 12 in 1..9
-            val roomy = roomyArt(layout, size, fit, timeSize, timeSize + if (showHours) hoursHeight + 8 * fit.k else 0f, pattern, singleDigitHour, z)
+            val roomy = backdropArt(layout, size)
             if (roomy != null) {
-                // Room to spare: a bigger image that runs off the top-right corner, so the space is filled.
+                // A big backdrop that runs off the top-right corner; the time may overlap its edge.
                 BleedArt(Art.drawable(sky, phase), roomy.size, bleedRight = roomy.size * roomy.bleedRight, bleedTop = roomy.size * roomy.bleedTop)
             } else {
                 BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
@@ -268,47 +264,21 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     }
 }
 
-/** How much of a roomy image runs off the top and right edges. */
+/** How much of a square clock's backdrop runs off the top and right edges. */
 private const val ROOMY_BLEED = .12f
 
-/**
- * The size for weather art when the clock has room to spare, or null when it's tight and the art
- * should run off the corner as usual. Wide layouts use the width beside the time; 2×2-style ones
- * the height above it. The image may poke [ROOMY_BLEED] past the top and right edges, so the
- * visible part is what has to fit.
- */
+/** A backdrop image's size (dp) and the share of it that runs off the right and top edges. */
 private data class RoomyArt(val size: Float, val bleedRight: Float, val bleedTop: Float)
 
 /**
- * Weather art when the clock has room to spare, or null when it's tight and the art should run off
- * the corner at its usual size.
- *
- * Wide clocks (2×1-style): the art is up to about as tall as the widget, fills the space beside the
- * time and runs off the top and right edges.
- * 2×2-style clocks: the art fills the height above the time, next to the city labels.
+ * Weather art as a backdrop, sized from the widget rather than the space left by the text: about the
+ * widget's height on wide clocks, about 60% of the width on square ones. It runs off the top-right
+ * corner, and the time and labels may overlap its edge. Null for the 1×1, which keeps the corner icon.
  */
-private fun roomyArt(
-    layout: ClockLayout, size: DpSize, fit: Fit, timeSize: Float, contentBelow: Float,
-    pattern: String, singleDigitHour: Boolean, z: Float,
-): RoomyArt? {
-    val pad = 12 * fit.k
-    return when (layout) {
-        ClockLayout.SMALL -> {
-            val bleedRight = .16f
-            val tuck = .05f // a sliver of the art may sit behind the end of the time, no more
-            val timeWidth = timeSize * timeInkEm(pattern, singleDigitHour)
-            val beside = size.width.value - pad - timeWidth - 4 * fit.k
-            val art = minOf(beside / (1 - bleedRight - tuck), size.height.value * 1.1f)
-            if (art >= z) RoomyArt(art, bleedRight, .14f) else null
-        }
-        ClockLayout.SQUARE -> {
-            // Above the time (and the hours row); up to about 60% of the width, beside the city labels.
-            val visible = 1 - ROOMY_BLEED
-            val above = size.height.value - pad - contentBelow - 16 * fit.k
-            if (above >= z * .6f) RoomyArt(minOf(above / visible, size.width.value * .6f, z * 1.8f), ROOMY_BLEED, ROOMY_BLEED) else null
-        }
-        ClockLayout.TINY -> null
-    }
+private fun backdropArt(layout: ClockLayout, size: DpSize): RoomyArt? = when (layout) {
+    ClockLayout.SMALL -> RoomyArt(minOf(size.height.value * 1.15f, size.width.value * .6f), .16f, .14f)
+    ClockLayout.SQUARE -> RoomyArt(minOf(size.width.value * .58f, size.height.value * .62f), ROOMY_BLEED, ROOMY_BLEED)
+    ClockLayout.TINY -> null
 }
 
 /** Height of the clock's hours row at design scale. */
@@ -355,18 +325,6 @@ internal fun cityCode(name: String): String {
  * Rough width of a time pattern in ems for the system's condensed bold face:
  * digits about 0.56 em, separators and spaces 0.27 em; "AM"/"PM" is drawn at 42% of the size.
  */
-/**
- * Closer estimate of how wide the time actually draws, for working out the space beside it
- * (digits about 0.5 em, separators 0.22 em, AM/PM at 42%). [timeWidthEm] stays generous because
- * it decides whether the time fits at all.
- */
-internal fun timeInkEm(pattern: String, singleDigitHour: Boolean): Float {
-    val digits = pattern.count { it == 'H' || it == 'm' || it == 's' } + if (pattern.startsWith("h")) (if (singleDigitHour) 1 else 2) else 0
-    val separators = pattern.count { it == ':' }
-    val amPm = if (pattern.contains('a')) 1.1f * .42f + .12f else 0f
-    return digits * .5f + separators * .22f + amPm
-}
-
 internal fun timeWidthEm(pattern: String): Float {
     val digits = pattern.count { it == 'H' || it == 'm' || it == 's' } + if (pattern.startsWith("h")) 2 else 0
     val separators = pattern.count { it == ':' || it == ' ' }

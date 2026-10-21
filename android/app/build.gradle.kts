@@ -19,7 +19,7 @@ android {
         applicationId = "dev.amaan.amn"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 34 // Samsung phone on Android 14+; matches amn_widgets
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

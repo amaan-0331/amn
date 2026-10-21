@@ -49,7 +49,7 @@ object WeatherRefresher {
                 if (fix != null) {
                     lat = fix.latitude
                     lon = fix.longitude
-                    place = gpsPlace ?: location.placeName(lat, lon).also { gpsPlace = it }
+                    place = gpsPlace ?: runCatching { location.placeName(lat, lon) }.getOrNull().also { gpsPlace = it }
                 }
             }
             runCatching {
@@ -105,13 +105,14 @@ object WeatherSchedule {
         )
     }
 
-    fun redrawAfterJustNow(context: Context) {
+    fun redrawAfterJustNow(context: Context) = redrawIn(context, WeatherWidget.JUST_NOW_MS + 5_000, "amn-weather-redraw")
+
+    /** Redraws all weather widgets after [delayMs], so time-based labels move on by themselves. */
+    fun redrawIn(context: Context, delayMs: Long, name: String) {
         WorkManager.getInstance(context).enqueueUniqueWork(
-            "amn-weather-redraw",
+            name,
             ExistingWorkPolicy.REPLACE,
-            OneTimeWorkRequestBuilder<WeatherRedrawWorker>()
-                .setInitialDelay(WeatherWidget.JUST_NOW_MS + 5_000, TimeUnit.MILLISECONDS)
-                .build(),
+            OneTimeWorkRequestBuilder<WeatherRedrawWorker>().setInitialDelay(delayMs, TimeUnit.MILLISECONDS).build(),
         )
     }
 

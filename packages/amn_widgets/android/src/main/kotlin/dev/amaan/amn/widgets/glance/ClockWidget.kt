@@ -197,7 +197,14 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         } else if (weather != null) {
             // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
             val z = artSize * .8f
-            BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
+            val whole = wholeArtSize(layout, size, fit, timeSize, pattern, z)
+            if (whole != null) {
+                // Enough room: show the whole asset, inset from the corner, instead of cropping it.
+                val top = if (layout == ClockLayout.SMALL) (size.height.value - whole) / 2 else 10 * fit.k
+                BleedArt(Art.drawable(sky, phase), whole, modifier = GlanceModifier.padding(top = top.dp, end = (10 * fit.k).dp))
+            } else {
+                BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
+            }
         } else {
             // Runs off the top-right corner by a fifth, as in the design.
             BleedArt(Art.drawable(Condition.CLEAR, phase), artSize, bleedRight = artSize * .2f, bleedTop = artSize * .2f)
@@ -238,6 +245,28 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
                 }
             }
         }
+    }
+}
+
+/**
+ * How big the weather art can be drawn whole, or null when it has to run off the corner.
+ * 2×1-style layouts use the width beside the time; 2×2-style ones the height above it.
+ */
+private fun wholeArtSize(layout: ClockLayout, size: DpSize, fit: Fit, timeSize: Float, pattern: String, z: Float): Float? {
+    val pad = 12 * fit.k
+    return when (layout) {
+        ClockLayout.SMALL -> {
+            val beside = size.width.value - pad * 2 - timeSize * timeWidthEm(pattern) - 8 * fit.k
+            if (beside >= z * .9f) minOf(beside, size.height.value * .78f, z * 1.6f) else null
+        }
+        ClockLayout.SQUARE -> {
+            // Above the time and the offset line, beside the city and day/night labels. A whole image
+            // somewhat smaller than the cropped one still reads better than a cut-off one.
+            val above = size.height.value - pad * 2 - timeSize - 16 * fit.k
+            val beside = size.width.value * .5f
+            if (above >= z * .6f) minOf(above, beside, z * 1.4f) else null
+        }
+        ClockLayout.TINY -> null
     }
 }
 

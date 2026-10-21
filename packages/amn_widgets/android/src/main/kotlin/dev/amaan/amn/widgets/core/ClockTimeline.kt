@@ -18,12 +18,13 @@ object ClockTimeline {
         return TimeOfDay.phase(local.hour * 60 + local.minute, s.sunriseMin, s.sunsetMin)
     }
 
-    fun nextUpdate(now: Instant, city: ZoneId, phone: ZoneId, sun: (LocalDate) -> SunDay?): Instant {
+    /** [extraMinutes]: more city-local times of day to redraw at, such as when a 12-hour time gains a digit. */
+    fun nextUpdate(now: Instant, city: ZoneId, phone: ZoneId, sun: (LocalDate) -> SunDay?, extraMinutes: List<Int> = emptyList()): Instant {
         val today = now.atZone(city).toLocalDate()
         val candidates = mutableListOf<Instant>()
         for (d in listOf(today, today.plusDays(1))) {
             val s = sun(d) ?: fallback
-            for (m in listOf(0, s.sunriseMin - 30, s.sunriseMin + 60, s.sunsetMin - 60, s.sunsetMin + 30)) {
+            for (m in listOf(0, s.sunriseMin - 30, s.sunriseMin + 60, s.sunsetMin - 60, s.sunsetMin + 30) + extraMinutes) {
                 candidates += d.atStartOfDay(city).plusMinutes(m.toLong()).toInstant()
             }
         }

@@ -41,7 +41,9 @@ object ClockSchedule {
     private const val KEY_ID = "id"
 
     fun scheduleNext(context: Context, appWidgetId: Int, s: ClockSettings) {
-        val next = ClockTimeline.nextUpdate(Instant.now(), s.zoneOrPhone(), ZoneId.systemDefault(), s.sun())
+        // In 12-hour time the hour goes from one digit to two at 10:00 and 22:00, and back at 1:00 and 13:00.
+        val digitChanges = if (s.h24) emptyList() else listOf(60, 600, 780, 1320)
+        val next = ClockTimeline.nextUpdate(Instant.now(), s.zoneOrPhone(), ZoneId.systemDefault(), s.sun(), digitChanges)
         val delay = Duration.between(Instant.now(), next).toMillis().coerceAtLeast(0) + 5_000
         WorkManager.getInstance(context).enqueueUniqueWork(
             "amn-clock-$appWidgetId",

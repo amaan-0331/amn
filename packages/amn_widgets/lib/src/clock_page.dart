@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'bridge.dart';
-import 'cities.dart';
+import 'geocoding.dart';
 import 'ui.dart';
 
 /// Edit page for a clock widget. See the spec's "Edit pages" section.
@@ -21,24 +23,58 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
   bool _h24 = true;
   bool _seconds = false;
   PreviewSize _size = clockSizes[2];
+  ZoneInfo? _zone;
+  Timer? _tick;
 
   @override
   void initState() {
     super.initState();
-    WidgetBridge.getSettings(widget.widgetId, 'clock').then((m) {
-      if (!mounted) return;
-      setState(() {
-        final tz = m['timeZone'] as String?;
-        final name = m['cityName'] as String?;
-        if (tz != null && name != null) {
-          _city = kCities.firstWhere((c) => c.name == name,
-              orElse: () => City(name, m['countryName'] as String? ?? '', (m['lat'] as num?)?.toDouble() ?? 0, (m['lon'] as num?)?.toDouble() ?? 0, tz));
-        }
-        _h24 = m['h24'] as bool? ?? true;
-        _seconds = m['seconds'] as bool? ?? false;
-        _loaded = true;
-      });
+    _load();
+    // Keeps the selected city's time current while the page is open.
+    _tick = Timer.periodic(const Duration(seconds: 20), (_) => _describe());
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final m = await WidgetBridge.getSettings(widget.widgetId, 'clock');
+    if (!mounted) return;
+    setState(() {
+      final tz = m['timeZone'] as String?;
+      final name = m['cityName'] as String?;
+      if (tz != null && name != null) {
+        _city = City(
+          name: name,
+          country: m['countryName'] as String? ?? '',
+          lat: (m['lat'] as num?)?.toDouble() ?? 0,
+          lon: (m['lon'] as num?)?.toDouble() ?? 0,
+          timeZone: tz,
+        );
+      }
+      _h24 = m['h24'] as bool? ?? true;
+      _seconds = m['seconds'] as bool? ?? false;
+      _loaded = true;
     });
+    await _describe();
+  }
+
+  Future<void> _describe() async {
+    final tz = _city?.timeZone;
+    if (tz == null) return;
+    final info = await WidgetBridge.describeZones([tz], h24: _h24);
+    if (mounted) setState(() => _zone = info[tz]);
+  }
+
+  void _select(City c) {
+    setState(() {
+      _city = c;
+      _zone = null;
+    });
+    _describe();
   }
 
   Map<String, Object?> get _settings => {
@@ -55,31 +91,43 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final city = _city;
+    final zone = _zone;
     return Scaffold(
       appBar: AppBar(
         leading: CloseButtonFor(adding: widget.adding),
-        title: Text(widget.adding ? 'Add clock widget' : 'Clock widget', style: pageTitleStyle(context)),
+        title: PageTitle(widget.adding ? 'Add clock widget' : 'Clock widget'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
         children: [
           PreviewBand(
-            preview: WidgetPreview(kind: 'clock', size: _size, settings: _settings),
+            preview: WidgetPreview(kind: 'clock', widgetId: widget.widgetId, size: _size, settings: _settings),
             sizes: clockSizes,
             selected: _size,
             onSelected: (s) => setState(() => _size = s),
+            note: _loaded && city == null ? 'Pick a city below.' : null,
           ),
           const SectionLabel('City'),
           if (city != null) ...[
             GroupCard(children: [
               ListTile(
-                title: Text(city.name.toUpperCase(), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                subtitle: Text('${city.country} · ${city.timeZone}'),
+                title: Text(city.name.toUpperCase(), style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 26)),
+                subtitle: Text([if (city.country.isNotEmpty) city.country, if (zone != null) zone.gmt].join(' · ')),
+                trailing: zone == null
+                    ? null
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(zone.time, style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 24)),
+                          Text(zone.offset, style: theme.textTheme.bodySmall),
+                        ],
+                      ),
               ),
             ]),
             const SizedBox(height: 8),
           ],
-          CityPicker(selected: city, hint: 'Search for a city or country', onSelected: (c) => setState(() => _city = c)),
+          CityPicker(selected: city, hint: 'Search for a city', showZones: true, h24: _h24, onSelected: _select),
           const SectionLabel('Format'),
           GroupCard(children: [
             ListTile(
@@ -89,7 +137,10 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
                 showSelectedIcon: false,
                 segments: const [ButtonSegment(value: true, label: Text('24h')), ButtonSegment(value: false, label: Text('12h'))],
                 selected: {_h24},
-                onSelectionChanged: (v) => setState(() => _h24 = v.first),
+                onSelectionChanged: (v) {
+                  setState(() => _h24 = v.first);
+                  _describe();
+                },
               ),
             ),
             SwitchListTile(
@@ -104,7 +155,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
       bottomNavigationBar: BottomAction(
         label: widget.adding ? 'Add to home screen' : 'Save',
         // A clock needs a city before it can be added.
-        onPressed: _loaded && city != null ? () => WidgetBridge.save(widget.widgetId, 'clock', _settings) : null,
+        onPressed: _loaded && city?.timeZone != null ? () => WidgetBridge.save(widget.widgetId, 'clock', _settings) : null,
       ),
     );
   }

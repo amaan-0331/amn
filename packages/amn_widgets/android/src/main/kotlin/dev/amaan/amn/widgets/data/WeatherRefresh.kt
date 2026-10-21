@@ -45,14 +45,11 @@ object WeatherRefresher {
                     gpsTried = true
                 }
                 val fix = gpsFix
+                // No fix (for example no "Allow all the time"): fall back to the pinned city, labelled as such.
                 if (fix != null) {
                     lat = fix.latitude
                     lon = fix.longitude
                     place = gpsPlace ?: location.placeName(lat, lon).also { gpsPlace = it }
-                } else {
-                    // No fix: keep the last known place for this widget rather than jumping to the pinned city.
-                    val last = cache.load(id)
-                    if (last != null) place = last.placeName
                 }
             }
             runCatching {

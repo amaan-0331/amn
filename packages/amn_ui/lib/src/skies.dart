@@ -14,7 +14,7 @@ class Sky {
   final String phase;
 
   /// "rain at dusk", "clear night".
-  String get name => phase == 'night' ? '${condition.toLowerCase()} night' : '${condition.toLowerCase()} at $phase';
+  String get name => phase == 'night' ? '${condition.toLowerCase()} night' : phase == 'day' ? '${condition.toLowerCase()} by day' : '${condition.toLowerCase()} at $phase';
 }
 
 /// The 28 widget skies (7 conditions × dawn, day, dusk, night), with the same

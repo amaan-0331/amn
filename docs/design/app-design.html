@@ -1,594 +1,205 @@
+<!doctype html>
 <meta charset="utf-8">
 <title>AMN Drift</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Roboto+Flex:opsz,wght@8..144,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Roboto+Flex:opsz,wght@8..144,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a live sky band as the hero, then the two phones (light and dark) with motion controls,
-   then how the drift works, surfaces, tokens, icon, and the Flutter plan as a single reading column. */
+/* A static spec: decisions, numbers and tokens for the AMN Drift design system.
+   The motion lives in the app (packages/amn_ui), not here. */
 :root{
-  --bg:#0B0C13; --surface:#14161F; --surface-2:#1B1E2A; --ink:#ECEEF5; --muted:#9AA1B4; --line:#262A38;
-  --accent:#FF8A5B; --accent-ink:#1A0B05;
+  --bg:#EEF0F6; --surface:#FFFFFF; --surface-2:#F5F6FA; --ink:#11131C; --muted:#545B6E; --line:#D9DCE6;
+  --accent:#C2410C; --accent-ink:#FFFFFF;
   --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
   --f-body:'Roboto Flex',Roboto,system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
-  color-scheme:dark;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
-  --bg:#EEF0F6; --surface:#FFFFFF; --surface-2:#F5F6FA; --ink:#11131C; --muted:#545B6E; --line:#D9DCE6;
-  --accent:#C2410C; --accent-ink:#FFFFFF; color-scheme:light}}
-:root[data-theme="light"]{
-  --bg:#EEF0F6; --surface:#FFFFFF; --surface-2:#F5F6FA; --ink:#11131C; --muted:#545B6E; --line:#D9DCE6;
-  --accent:#C2410C; --accent-ink:#FFFFFF; color-scheme:light}
-
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0C13; --surface:#14161F; --surface-2:#1B1E2A; --ink:#ECEEF5; --muted:#9AA1B4; --line:#262A38;
+  --accent:#FF8A5B; --accent-ink:#1A0B05; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0C13; --surface:#14161F; --surface-2:#1B1E2A; --ink:#ECEEF5; --muted:#9AA1B4; --line:#262A38;
+  --accent:#FF8A5B; --accent-ink:#1A0B05; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0}
-.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.wrap{max-width:1180px;margin:0 auto}
+main{max-width:1040px;margin:0 auto;padding:0 16px 80px}
 h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:.95;text-transform:uppercase;margin:0;text-wrap:balance}
-h1{font-size:clamp(64px,13vw,150px);letter-spacing:-.01em}
-h2{font-size:clamp(32px,4.6vw,46px)}
-h3{font-size:22px;font-weight:700;letter-spacing:.02em}
-p{margin:0;max-width:68ch}
+h1{font-size:clamp(56px,11vw,120px)}
+h2{font-size:clamp(30px,4.4vw,42px)}
+h3{font-size:20px;font-weight:700;letter-spacing:.02em;margin-bottom:8px}
+p{margin:0}
 code{font-family:var(--f-mono);font-size:.86em}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-/* Hero: the sky itself */
-.hero{position:relative;overflow:hidden;color:#fff}
-.hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hero .wrap{position:relative;display:grid;gap:14px;padding-block:72px 56px}
-.hero .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
-.hero p{font-size:18px;max-width:52ch;text-shadow:0 1px 18px rgba(0,0,0,.25)}
-.hero .now{justify-self:start;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
-  background:rgba(255,255,255,.16);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border:1px solid rgba(255,255,255,.22)}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--live,#fff);box-shadow:0 0 0 3px rgba(255,255,255,.25)}
-
-section.blk{padding-block:56px;border-top:1px solid var(--line)}
-section.blk:first-of-type{border-top:0}
-.lede{color:var(--muted);font-size:16px;margin-top:10px}
-
-/* Phones */
-.stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin-top:28px}
-@media (max-width:980px){.stage{grid-template-columns:minmax(0,1fr)}}
-.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
-.pfig{margin:0;display:grid;gap:10px;justify-items:center}
-.pfig figcaption{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
-.phone{--s:1px;position:relative;width:340px;max-width:calc(100vw - 40px);aspect-ratio:9/19.5;border-radius:44px;overflow:hidden;
-  border:7px solid #07080C;box-shadow:0 24px 60px rgba(0,0,0,.35);isolation:isolate}
-.phone canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
-.phone .ui{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;padding:12px 16px 18px;gap:14px;color:var(--p-ink)}
-.phone.light{--p-ink:#10131D;--p-sub:#2E3446;--g-tint:rgba(255,255,255,.38);--g-edge:rgba(255,255,255,.55);--g-hi:rgba(255,255,255,.7);--grainA:.10;--g-row:rgba(16,19,29,.10)}
-.phone.dark{--p-ink:#F2F3FA;--p-sub:#C6CAD9;--g-tint:rgba(10,12,22,.34);--g-edge:rgba(255,255,255,.14);--g-hi:rgba(255,255,255,.18);--grainA:.14;--g-row:rgba(255,255,255,.10)}
-.sb{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;padding:0 6px}
-.sb svg{height:11px}
-.top{display:flex;justify-content:space-between;align-items:center}
-.wm{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:.06em}
-.icbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center}
-.icbtn svg{width:18px;height:18px}
-.greet{display:grid;gap:2px;margin-top:6px}
-.greet small{font-size:14px;font-weight:600;color:var(--p-sub)}
-.greet .time{font-family:var(--f-display);font-weight:700;font-size:96px;line-height:.86;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.greet .date{font-size:14.5px;font-weight:500;color:var(--p-sub)}
-.chip{justify-self:start;align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:650}
-.spacer{flex:1}
-.glass{position:relative;overflow:hidden;border-radius:26px;background:var(--g-tint);
-  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
-  border:1px solid var(--g-edge);box-shadow:inset 0 1px 0 var(--g-hi)}
-.glass::after{content:"";position:absolute;inset:-60%;pointer-events:none;background-image:var(--noise);background-size:160px 160px;opacity:var(--grainA);mix-blend-mode:overlay;animation:grain 1.1s steps(7) infinite}
-.no-grain .glass::after{animation:none}
-@keyframes grain{0%{transform:translate(0,0)}15%{transform:translate(-7%,4%)}30%{transform:translate(5%,-6%)}45%{transform:translate(-3%,8%)}60%{transform:translate(8%,2%)}75%{transform:translate(-6%,-5%)}90%{transform:translate(3%,6%)}100%{transform:translate(0,0)}}
-.card{display:grid}
-.card h4{margin:0;padding:14px 16px 6px;font-size:11.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--p-sub)}
-.row{display:flex;align-items:center;gap:12px;padding:10px 16px;position:relative}
-.row+.row::before{content:"";position:absolute;left:62px;right:16px;top:0;height:1px;background:var(--g-row)}
-.row img{width:36px;height:36px;object-fit:contain;flex:none}
-.row .t{flex:1;min-width:0;display:grid}
-.row .t b{font-size:14.5px;font-weight:700}
-.row .t span{font-size:12.5px;color:var(--p-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .v{font-family:var(--f-display);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums}
-.chev{width:16px;height:16px;flex:none;color:var(--acc)}
-.cta{display:flex;align-items:center;gap:12px;padding:14px 16px}
-.cta .t{flex:1;display:grid}
-.cta .t b{font-size:15px;font-weight:750}
-.cta .t span{font-size:12.5px;color:var(--p-sub)}
-.btn{border:0;border-radius:999px;padding:9px 16px;font:inherit;font-size:13px;font-weight:750;background:var(--acc);color:var(--acc-ink);cursor:pointer}
-
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:18px}
-.ctl{display:grid;gap:8px}
-.ctl .lbl{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.seg{display:flex;flex-wrap:wrap;gap:6px}
-.seg button{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.panel p{font-size:13.5px;color:var(--muted)}
-
-/* Timeline */
-.tl{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:10px}
-.tl canvas{width:100%;height:150px;display:block;border-radius:10px}
-.tl .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
-
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-top:24px}
-.spec{display:grid;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;min-width:0}
-.spec ul{margin:0;padding-left:20px;display:grid;gap:6px}
-.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
-table{border-collapse:collapse;width:100%;font-size:14px}
+a{color:var(--accent)}
+header{padding:56px 0 32px;display:grid;gap:14px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);font-size:17px;max-width:62ch}
+section{padding-block:44px;border-top:1px solid var(--line);display:grid;gap:18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.card p{color:var(--muted);font-size:14px}
+.dec{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.dec div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.dec b{display:block;font-size:14px}
+.dec span{color:var(--muted);font-size:13.5px}
+.shots{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+figure{margin:0;display:grid;gap:8px}
+figure img{width:100%;border-radius:22px;border:1px solid var(--line);display:block}
+figcaption{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
 tr:last-child td{border-bottom:0}
-th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
-td.n{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
-
-/* Surfaces specimen */
-.specimen{position:relative;border-radius:24px;overflow:hidden;min-height:330px;isolation:isolate}
-.specimen canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.specimen .ui{position:relative;display:grid;gap:12px;padding:18px;color:var(--p-ink)}
-.toggle{width:46px;height:28px;border-radius:999px;background:var(--acc);position:relative;flex:none}
-.toggle::after{content:"";position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--acc-ink)}
-.tonal{border:1px solid var(--g-edge);background:var(--g-tint);color:var(--p-ink);border-radius:999px;padding:9px 16px;font:inherit;font-size:13px;font-weight:700}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-
-/* Type + tokens */
-.typerow{display:flex;align-items:baseline;gap:16px;padding:8px 0;border-bottom:1px solid var(--line)}
-.typerow:last-child{border-bottom:0}
-.typerow .k{font-family:var(--f-mono);font-size:12px;color:var(--muted);width:140px;flex:none}
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
-.sw{height:64px;border-radius:12px;display:flex;align-items:flex-end;padding:6px 8px;font-family:var(--f-mono);font-size:10.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
-
-/* Icons */
-.icons{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:24px}
-.icard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:14px;justify-items:center}
-.icard h3{justify-self:start}
-.icard p{font-size:13.5px;color:var(--muted);justify-self:start}
-.irow{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;justify-content:center}
-.irow canvas{display:block}
-.ihome{width:100%;border-radius:16px;overflow:hidden;position:relative;height:120px}
-.ihome canvas.bgc{position:absolute;inset:0;width:100%;height:100%}
-.ihome .apps{position:relative;display:flex;justify-content:center;gap:18px;padding-top:18px}
-.ihome .app{display:grid;justify-items:center;gap:6px;font-size:11.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.ghost{width:56px;height:56px;border-radius:18px;background:rgba(255,255,255,.18)}
-.rec{background:color-mix(in srgb,var(--accent) 16%,transparent);border-radius:14px;padding:12px 14px;max-width:72ch}
-.rec b{color:var(--accent)}
-@media (prefers-reduced-motion:reduce){.glass::after{animation:none}}
+td code{white-space:nowrap}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--line);vertical-align:-2px;margin-right:6px}
+.skies{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.sky{height:64px;border-radius:12px;padding:8px;font-size:11px;font-weight:600;display:flex;align-items:flex-end;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+.icon{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.icon img{width:120px;height:120px}
+.mono{width:120px;height:120px;border-radius:50%;background:#DCE3F2;display:grid;place-items:center}
+.mono.dk{background:#1E2433}
+.type{display:grid;gap:10px}
+.type div{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.type small{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-width:170px}
 </style>
-
-<header class="hero" aria-label="AMN Drift">
-  <canvas id="heroSky" aria-hidden="true"></canvas>
-  <div class="wrap gut">
-    <div class="eyebrow">AMN · App design system · Proposal</div>
-    <h1>AMN Drift</h1>
-    <p>A living sky behind every screen. Soft layers of the widget palettes drift, fade and trade places on their own clocks, so the background never settles into a loop. Frosted glass with moving grain sits on top.</p>
-    <span class="now"><span class="dot" id="heroDot"></span><span id="heroNow">Drifting</span></span>
-  </div>
+<main>
+<header>
+  <span class="eyebrow">AMN · design system · spec</span>
+  <h1>AMN Drift</h1>
+  <p class="lede">A drifting sky behind every screen, made from the 28 widget skies. Frosted glass sits on top, and the accent colour comes from the sky. This page holds the numbers; the motion itself lives in the app, in <code>packages/amn_ui</code>.</p>
 </header>
 
-<main>
-  <section class="blk gut" id="home">
-    <div class="wrap">
-      <h2>Home</h2>
-      <p class="lede">For now the home screen is the time, a greeting and the sky, plus your widgets and the lab. Tools get added here later. Move the pointer over a phone to tilt it.</p>
-      <div class="stage">
-        <div class="phones">
-          <figure class="pfig"><div class="phone light" id="phLight"></div><figcaption>Light phone theme</figcaption></figure>
-          <figure class="pfig"><div class="phone dark" id="phDark"></div><figcaption>Dark phone theme</figcaption></figure>
-        </div>
-        <div class="panel" aria-label="Motion controls">
-          <div class="ctl"><span class="lbl">Speed</span><div class="seg" data-ctl="speed"><button data-v="1">Real</button><button data-v="4">4×</button><button data-v="20">20×</button></div></div>
-          <div class="ctl"><span class="lbl">Tilt</span><div class="seg" data-ctl="tilt"><button data-v="pointer">Follow pointer</button><button data-v="sway">Auto sway</button><button data-v="off">Off</button></div></div>
-          <div class="ctl"><span class="lbl">Grain</span><div class="seg" data-ctl="grain"><button data-v="on">Animated</button><button data-v="off">Still</button></div></div>
-          <div class="ctl"><span class="lbl">Reduce motion</span><div class="seg" data-ctl="reduce"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
-          <p>"Real" is the proposed speed: a layer takes 17–29 seconds to fade into its next palette. 20× shows the drift quickly. With reduce motion on (or the phone's own setting), the sky holds still on one palette and changes only when the app opens.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="blk gut" id="drift">
-    <div class="wrap">
-      <h2>How the drift works</h2>
-      <p class="lede">Four layers, each on its own clock, each picking its next palette from all 28 widget skies (7 conditions × dawn, day, dusk, night) in the phone's light or dark version.</p>
-      <div class="grid2">
-        <div class="spec">
-          <h3>Layers</h3>
-          <div class="tbl"><table>
-            <thead><tr><th>Layer</th><th>Fades to the next palette every</th><th>Moves</th><th>Tilt depth</th></tr></thead>
-            <tbody>
-              <tr><td>Base gradient</td><td class="n">37 s</td><td>Still; the whole-screen wash</td><td class="n">0</td></tr>
-              <tr><td>Far glow</td><td class="n">29 s</td><td>Wide, slow orbit</td><td class="n">0.4</td></tr>
-              <tr><td>Mid glow</td><td class="n">23 s</td><td>Medium orbit, breathes in size</td><td class="n">0.7</td></tr>
-              <tr><td>Near glow</td><td class="n">17 s</td><td>Smaller, quicker orbit</td><td class="n">1.0</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-        <div class="spec">
-          <h3>Why it never feels like a loop</h3>
-          <ul>
-            <li><b>Different clocks:</b> 37, 29, 23 and 17 seconds share no common beat, so the same combination doesn't come back for hours.</li>
-            <li><b>Random walk, not a playlist:</b> each layer picks its next palette by a seeded hash, never the one it's on and never the one another layer just took.</li>
-            <li><b>Orbits with odd ratios:</b> each glow follows two overlapping sine paths whose periods don't divide evenly, so the paths never retrace.</li>
-            <li><b>Continuous fades:</b> a layer is always halfway between two palettes; nothing ever snaps.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="tl">
-        <h3>The next three minutes</h3>
-        <canvas id="timeline" aria-label="Palette timeline for each layer over the next three minutes"></canvas>
-        <div class="legend"><span>Rows, top to bottom: base, far, mid, near.</span><span>Each block is one palette; the line is now.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="blk gut" id="surfaces">
-    <div class="wrap">
-      <h2>Surfaces</h2>
-      <p class="lede">Content sits on frosted glass: a strong blur, a light or dark tint, a hairline edge with a highlight on top, and a grain texture that shifts a few times a second. The accent (buttons, toggles, chevrons) is taken from the sky and adjusted until it reads on the glass.</p>
-      <div class="grid2">
-        <div class="specimen" id="specLight"><canvas aria-hidden="true"></canvas></div>
-        <div class="specimen" id="specDark"><canvas aria-hidden="true"></canvas></div>
-      </div>
-      <div class="grid2">
-        <div class="spec">
-          <h3>Glass</h3>
-          <div class="tbl"><table>
-            <thead><tr><th>Part</th><th>Light</th><th>Dark</th></tr></thead>
-            <tbody>
-              <tr><td>Blur</td><td class="n" colspan="2">22 dp, saturation 150%</td></tr>
-              <tr><td>Tint</td><td class="n">white 38%</td><td class="n">ink #0A0C16 34%</td></tr>
-              <tr><td>Edge</td><td class="n">white 55%, 1 dp</td><td class="n">white 14%, 1 dp</td></tr>
-              <tr><td>Top highlight</td><td class="n">white 70%</td><td class="n">white 18%</td></tr>
-              <tr><td>Grain</td><td class="n">10%, overlay</td><td class="n">14%, overlay</td></tr>
-              <tr><td>Radius</td><td class="n" colspan="2">26 dp cards · 999 pills · 18 dp small tiles</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-        <div class="spec">
-          <h3>Accent from the sky</h3>
-          <ul>
-            <li>Take the near glow's current color, keep its hue, raise saturation to at least 55%.</li>
-            <li>Set lightness so it reaches 4.5:1 against the glass: about 40% on light glass, 72% on dark.</li>
-            <li>Ease changes over 2 seconds, so it drifts with the sky instead of jumping.</li>
-            <li>Text on the accent (button labels) is near-black or near-white, whichever contrasts more.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="blk gut" id="type">
-    <div class="wrap">
-      <h2>Type and tokens</h2>
-      <p class="lede">The same faces as the widgets: Barlow Condensed for titles and numbers, the system font for everything you read.</p>
-      <div class="grid2">
-        <div class="spec">
-          <h3>Type scale</h3>
-          <div>
-            <div class="typerow"><span class="k">time 96 / Barlow 700</span><span style="font-family:var(--f-display);font-weight:700;font-size:56px;line-height:.9">20:47</span></div>
-            <div class="typerow"><span class="k">title 28 / Barlow 800</span><span style="font-family:var(--f-display);font-weight:800;font-size:28px;text-transform:uppercase">Widget lab</span></div>
-            <div class="typerow"><span class="k">value 24 / Barlow 700</span><span style="font-family:var(--f-display);font-weight:700;font-size:24px">31°</span></div>
-            <div class="typerow"><span class="k">body 15 / system 500</span><span style="font-size:15px;font-weight:500">Dry for days</span></div>
-            <div class="typerow"><span class="k">label 11.5 / system 750</span><span style="font-size:11.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase">Your widgets</span></div>
-          </div>
-        </div>
-        <div class="spec">
-          <h3>Spacing, radius, motion</h3>
-          <div class="tbl"><table>
-            <tbody>
-              <tr><td>Spacing</td><td class="n">4 · 8 · 12 · 16 · 24 · 32</td></tr>
-              <tr><td>Screen gutter</td><td class="n">16 dp</td></tr>
-              <tr><td>Radius</td><td class="n">26 card · 18 tile · 999 pill</td></tr>
-              <tr><td>Drift fades</td><td class="n">17 / 23 / 29 / 37 s</td></tr>
-              <tr><td>Grain step</td><td class="n">~6 shifts per second</td></tr>
-              <tr><td>Accent ease</td><td class="n">2 s</td></tr>
-              <tr><td>Tilt range</td><td class="n">±24 dp at depth 1.0, smoothed</td></tr>
-            </tbody>
-          </table></div>
-        </div>
-      </div>
-      <div class="spec" style="margin-top:22px">
-        <h3>The 28 skies the drift draws from</h3>
-        <div class="swatches" id="swatches"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="blk gut" id="icon">
-    <div class="wrap">
-      <h2>App icon</h2>
-      <p class="lede">Abstract glowing orbs with grain, as a full-color adaptive icon and a one-color themed icon. Three compositions to pick from:</p>
-      <div class="icons" id="icons"></div>
-      <p class="rec" style="margin-top:22px"><b>My pick: Drift.</b> It reads as the app's background caught in one frame, holds up at 48 px, and its three overlapping orbs still read as a shape in the one-color themed version.</p>
-    </div>
-  </section>
-
-  <section class="blk gut" id="build">
-    <div class="wrap">
-      <h2>Building it in Flutter</h2>
-      <div class="grid2">
-        <div class="spec">
-          <h3>Background</h3>
-          <ul>
-            <li><b>One fragment shader</b> (<code>.frag</code>, Flutter's FragmentProgram) draws the base gradient and the three glows in a single pass on the GPU. The palettes and positions are passed in as uniforms each frame from Dart.</li>
-            <li><b>Tilt:</b> <code>sensors_plus</code> gyroscope, low-pass filtered, mapped to ±24 dp per depth unit.</li>
-            <li><b>Pauses</b> when the app is in the background or the screen is off, and runs at 30 fps, which is plenty for slow drift.</li>
-            <li><b>Reduce motion</b> (the system "Remove animations" setting): a still sky on one palette, chosen fresh each time the app opens.</li>
-          </ul>
-        </div>
-        <div class="spec">
-          <h3>Glass and grain</h3>
-          <ul>
-            <li><b>Glass:</b> <code>BackdropFilter</code> with a 22 dp blur per card, clipped to its rounded shape. Two or three cards per screen keep the cost low.</li>
-            <li><b>Grain:</b> one small pre-made noise tile, drawn over each card with overlay blending, its offset jumping about 6 times a second. No per-frame noise is generated, so it's nearly free.</li>
-            <li><b>Check on the A55:</b> if the blur ever drops frames, the fallback is the same glass without blur (tint and grain only).</li>
-          </ul>
-        </div>
-        <div class="spec">
-          <h3>Structure</h3>
-          <ul>
-            <li>A new <code>packages/amn_ui</code> with the theme (colors, type, radii), <code>DriftBackground</code>, <code>GlassCard</code>, the accent notifier and the shader. Tools and the widget pages use it.</li>
-            <li>The palettes come from one shared table, so the widgets and the app always use the same skies.</li>
-          </ul>
-        </div>
-        <div class="spec">
-          <h3>Open questions</h3>
-          <ul>
-            <li>Should the widget edit pages and the lab also move onto the drift and glass, or stay plain?</li>
-            <li>A name for you in the greeting ("Good evening, Amaan"), or keep it plain?</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<script>
-(function(){
-const $=s=>document.querySelector(s);
-const reduceSys=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const S={speed:1,tilt:'pointer',grain:'on',reduce:reduceSys?'on':'off'};
-
-/* ---- Palettes: the widget skies (same table and rules as the widgets) ---- */
-const COND={
-  clear:{day:['#FFD25A','#FF8F3A','#3A1500'],night:['#101B52','#2C2775','#EEF0FF'],dawn:['#FFB59A','#FFDFAE','#3B1209'],dusk:['#C2456B','#3E2A7A','#FFF1EC']},
-  partly:{day:['#8CCBFF','#FFD889','#0E2A47'],night:['#17265A','#3B4380','#EEF1FF']},
-  cloudy:{day:['#C9D3E2','#8E9DB5','#18202E'],night:['#2C3446','#161B26','#E9EDF5']},
-  rain:{day:['#4E70AE','#2D4677','#F3F7FF'],night:['#1C2A48','#0B1324','#E8EFFF']},
-  storm:{day:['#4A3B7A','#1D1838','#F6F0FF'],night:['#1E1236','#08060F','#F3ECFF']},
-  snow:{day:['#EEF4FF','#BCD0EE','#14305C'],night:['#2D3D63','#141E37','#EAF2FF']},
-  fog:{day:['#E2DCD1','#ADA699','#2A2621'],night:['#3B3934','#1E1C19','#EEEAE2']}
-};
-const LABEL={clear:'Clear',partly:'Partly cloudy',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snow',fog:'Fog'};
-const PH=['dawn','day','dusk','night'];
-const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const rgb2hex=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
-const mix=(a,b,t)=>{const A=hex2rgb(a),B=hex2rgb(b);return rgb2hex(A.map((v,i)=>v+(B[i]-v)*t));};
-function palette(cond,phase,dark){
-  const C=COND[cond];let top,bot;
-  if(phase==='night')[top,bot]=C.night;
-  else if(C[phase])[top,bot]=C[phase];
-  else{[top,bot]=C.day;
-    if(phase==='dawn'){top=mix(top,'#FF9E7A',.38);bot=mix(bot,'#FFD9A8',.25);}
-    if(phase==='dusk'){top=mix(top,'#C2456B',.35);bot=mix(bot,'#3E2A7A',.45);}
-  }
-  if(dark&&phase!=='night'){const soft=phase==='dawn'||phase==='dusk';top=mix(top,'#0A0C15',soft?.32:.55);bot=mix(bot,'#0A0C15',soft?.40:.62);}
-  return {top,bot,name:`${LABEL[cond]} · ${phase[0].toUpperCase()+phase.slice(1)}`};
-}
-const SKIES={light:[],dark:[]};
-for(const c of Object.keys(COND))for(const p of PH){SKIES.light.push(palette(c,p,false));SKIES.dark.push(palette(c,p,true));}
-
-/* ---- The drift: seeded random walk per layer ---- */
-const LAYERS=[{T:37,depth:0},{T:29,depth:.4},{T:23,depth:.7},{T:17,depth:1}];
-const hash=(i,n)=>{const x=Math.sin(i*127.1+n*311.7+7.3)*43758.5453;return x-Math.floor(x);};
-function pick(i,n,count){
-  // never the palette this layer is leaving
-  let a=Math.floor(hash(i,n)*count);const prev=Math.floor(hash(i,n-1)*count);
-  if(a===prev)a=(a+1+Math.floor(hash(i+9,n)*(count-1)))%count;
-  return a;
-}
-const smooth=x=>x*x*(3-2*x);
-function layerColor(i,t,skies){
-  const L=LAYERS[i],n=Math.floor(t/L.T),f=smooth((t/L.T)-n);
-  const a=skies[pick(i,n,skies.length)],b=skies[pick(i,n+1,skies.length)];
-  return {top:mix(a.top,b.top,f),bot:mix(a.bot,b.bot,f),from:a,to:b,f};
-}
-const TAU=Math.PI*2;
-function orbit(i,t){
-  const a=41+i*13,b=19+i*7,c=53+i*11,d=27+i*5;
-  return {x:.5+.32*Math.sin(TAU*t/a+i*2.1)+.13*Math.sin(TAU*t/b+i),
-          y:.46+.30*Math.cos(TAU*t/c+i*1.3)+.10*Math.sin(TAU*t/d+.7*i),
-          r:.55+.13*Math.sin(TAU*t/(31+i*5)+i)};
-}
-const rgba=(h,a)=>{const[r,g,b]=hex2rgb(h);return `rgba(${r},${g},${b},${a})`;};
-
-/* A canvas that paints the drift. One per phone, hero and specimen. */
-class Drift{
-  constructor(canvas,dark,offset){this.c=canvas;this.x=canvas.getContext('2d');this.dark=dark;this.off=offset||0;this.tx=0;this.ty=0;this.resize();}
-  resize(){const r=this.c.getBoundingClientRect();const k=Math.min(window.devicePixelRatio||1,1.5)*.6;this.w=this.c.width=Math.max(2,Math.round(r.width*k));this.h=this.c.height=Math.max(2,Math.round(r.height*k));}
-  paint(t,tilt){
-    const g=this.x,w=this.w,h=this.h,skies=this.dark?SKIES.dark:SKIES.light;t+=this.off;
-    this.tx+=(tilt.x-this.tx)*.08;this.ty+=(tilt.y-this.ty)*.08;
-    const base=layerColor(0,t,skies);
-    const lg=g.createLinearGradient(0,0,w*.27,h);lg.addColorStop(0,base.top);lg.addColorStop(1,base.bot);
-    g.globalCompositeOperation='source-over';g.fillStyle=lg;g.fillRect(0,0,w,h);
-    const m=Math.max(w,h);
-    for(let i=1;i<4;i++){
-      const col=layerColor(i,t,skies),o=orbit(i,t),d=LAYERS[i].depth;
-      const cx=(o.x+this.tx*.07*d)*w,cy=(o.y+this.ty*.07*d)*h,r=o.r*m*(1-.12*i);
-      const rg=g.createRadialGradient(cx,cy,0,cx,cy,r);
-      rg.addColorStop(0,rgba(i%2?col.top:col.bot,.85));rg.addColorStop(.55,rgba(i%2?col.bot:col.top,.38));rg.addColorStop(1,rgba(col.bot,0));
-      g.fillStyle=rg;g.fillRect(0,0,w,h);
-    }
-    return layerColor(3,t,skies);
-  }
-}
-
-/* ---- Accent from the sky ---- */
-function hsl(hex){let[r,g,b]=hex2rgb(hex).map(v=>v/255);const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0;const l=(mx+mn)/2;
-  if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6;}return[h,s,l];}
-function fromHsl(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return rgb2hex([f(0),f(8),f(4)].map(v=>v*255));}
-function accentFor(hex,dark){const[h,s]=hsl(hex);const a=fromHsl(h,Math.max(s,.55),dark?.72:.40);return{acc:a,ink:dark?'#11131C':'#FFFFFF'};}
-
-/* ---- Phone UI ---- */
-const ART='art/';
-const chevron='<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const statusIcons='<svg viewBox="0 0 44 14" aria-hidden="true"><rect x="0" y="8" width="3" height="6" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="9" rx="1" fill="currentColor"/><rect x="10" y="2" width="3" height="12" rx="1" fill="currentColor"/><rect x="20" y="2" width="20" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="22.5" y="4.5" width="13" height="6" rx="1.5" fill="currentColor"/></svg>';
-function greeting(h){return h<5?'Good night':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night';}
-function phoneUI(){
-  return `<canvas aria-hidden="true"></canvas><div class="ui">
-    <div class="sb"><span data-clock="short"></span>${statusIcons}</div>
-    <div class="top"><span class="wm">AMN</span><span class="icbtn glass" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm7.4-2.5a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.3 2.5a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.3-2.5a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z" fill="currentColor"/></svg></span></div>
-    <div class="greet"><small data-greet></small><div class="time" data-clock="time"></div><div class="date" data-clock="date"></div></div>
-    <span class="chip glass"><span class="dot" data-live></span><span data-skyname>Drifting</span></span>
-    <div class="spacer"></div>
-    <div class="glass card"><h4>Your widgets</h4>
-      <div class="row"><img src="${ART}clear-night.png" alt=""><span class="t"><b>Weather</b><span>Dubai · Dry for days</span></span><span class="v">31°</span>${chevron}</div>
-      <div class="row"><img src="${ART}rain.png" alt=""><span class="t"><b>City clock</b><span>Colombo · +1h 30m · 26°</span></span><span class="v" data-clock="colombo"></span>${chevron}</div>
-    </div>
-    <div class="glass cta"><span class="t"><b>Widget lab</b><span>Every size, any sky</span></span><button class="btn" type="button">Open</button></div>
-  </div>`;
-}
-
-/* ---- Grain tile ---- */
-(function makeNoise(){const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d');const im=g.createImageData(96,96);
-  for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255;}
-  g.putImageData(im,0,0);document.documentElement.style.setProperty('--noise',`url(${c.toDataURL()})`);})();
-
-/* ---- Set up surfaces ---- */
-const drifts=[];
-const hero=new Drift($('#heroSky'),true,0);drifts.push({d:hero,el:$('.hero'),hero:true});
-for(const [id,dark,off] of [['#phLight',false,11],['#phDark',true,53]]){
-  const el=$(id);el.innerHTML=phoneUI();const d=new Drift(el.querySelector('canvas'),dark,off);drifts.push({d,el,phone:true,dark});
-}
-function specimen(dark){return `<div class="ui">
-  <div class="glass card"><h4>Settings</h4>
-    <div class="row"><span class="t"><b>Temperature</b><span>Applies to all weather widgets</span></span><span class="v">°C</span></div>
-    <div class="row"><span class="t"><b>Show seconds</b><span>On the city clock</span></span><span class="toggle" aria-hidden="true"></span></div>
+<section>
+  <h2>Decisions</h2>
+  <div class="dec">
+    <div><b>Every screen uses the sky</b><span>Home shows it in full. Pages with a purpose (widget edit pages, the lab) mute it so they're easy to focus on.</span></div>
+    <div><b>Icon: Drift</b><span>Three screen-blended orbs on a night gradient, plus a monochrome themed icon.</span></div>
+    <div><b>Icons: Fluent UI System Icons</b><span><code>fluentui_system_icons</code>, 24 regular by default and filled for emphasis. No Material icons.</span></div>
+    <div><b>Grain breathes, never moves</b><span>A fixed noise texture whose strength fades in and out on an uneven rhythm.</span></div>
+    <div><b>Fragment shader, not flutter_gpu</b><span>flutter_gpu is on stable only behind a flag, is still a preview, and has an open Android startup deadlock (flutter#193890). A runtime fragment shader covers a 2D sky.</span></div>
+    <div><b>Greeting without a name</b><span>"Good evening", from the phone's clock.</span></div>
   </div>
-  <div class="chips"><span class="chip glass">Light</span><span class="chip glass">Dark</span><span class="chip glass"><span class="dot" data-live></span>Live</span></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button">Save</button><button class="tonal" type="button">Cancel</button></div>
-</div>`;}
-for(const [id,dark,off] of [['#specLight',false,97],['#specDark',true,131]]){
-  const el=$(id);el.classList.add('phone',dark?'dark':'light');el.style.cssText='width:auto;aspect-ratio:auto;border:0;box-shadow:none;max-width:none;border-radius:24px';
-  el.insertAdjacentHTML('beforeend',specimen(dark));const d=new Drift(el.querySelector('canvas'),dark,off);drifts.push({d,el,phone:true,dark});
+</section>
+
+<section>
+  <h2>On the phone</h2>
+  <p class="lede">Release build on a Galaxy A55, dark mode.</p>
+  <div class="shots">
+    <figure><img src="art/screen-home.jpg" alt="Home: greeting, large time, date, a 'Drifting through rain by day' chip, then a Your widgets glass card and a Widget lab card over a purple drifting sky"><figcaption>Home · full sky</figcaption></figure>
+    <figure><img src="art/screen-edit.jpg" alt="Weather widget edit page: glass band with the widget preview and size chips, location and units groups, Save button, over a dark muted sky"><figcaption>Edit page · muted sky</figcaption></figure>
+    <figure><img src="art/screen-lab.jpg" alt="Widget lab: condition and option chips, segmented controls and the summary engine glass panel over a muted sky"><figcaption>Widget lab · muted sky</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>The sky</h2>
+  <p class="lede">Four layers each walk through the 28 skies on their own clock. The clocks share no common beat, and a seeded hash picks each next sky (never the one being left), so the sky never visibly loops. It starts somewhere new on each launch.</p>
+  <div class="tbl"><table>
+    <tr><th>Layer</th><th>Fades every</th><th>Tilt depth</th><th>Drawn as</th></tr>
+    <tr><td>Base</td><td>37 s</td><td>0</td><td>Linear wash from top-left toward (27% width, bottom)</td></tr>
+    <tr><td>Glow 1</td><td>29 s</td><td>0.4</td><td>Radial: inner 85% → outer 38% at 0.55 → 0 at the edge</td></tr>
+    <tr><td>Glow 2</td><td>23 s</td><td>0.7</td><td>Same, radius × 0.88</td></tr>
+    <tr><td>Glow 3 (near)</td><td>17 s</td><td>1.0</td><td>Same, radius × 0.76; its colour picks the accent</td></tr>
+  </table></div>
+  <div class="grid">
+    <div class="card"><h3>Crossfade</h3><p>Smoothstep between this sky and the next over the whole period, so a layer is always changing.</p></div>
+    <div class="card"><h3>Orbits</h3><p>Each glow's x and y are two sines with unrelated periods (19–76 s). Its radius breathes between 0.42 and 0.68 of the long side.</p></div>
+    <div class="card"><h3>Tilt</h3><p>Accelerometer delta from a slowly adapting rest pose, clamped to ±1. Offset = tilt × 0.07 × depth × screen, eased in at about 5 per second.</p></div>
+    <div class="card"><h3>Cost</h3><p>One full-screen shader pass at 30 fps from a timer, paused when the app is hidden. Dithered so the gradients don't band. Reduce motion freezes the sky and the tilt.</p></div>
+  </div>
+  <h3>The 28 skies</h3>
+  <div class="skies" id="skies"></div>
+</section>
+
+<section>
+  <h2>Muted</h2>
+  <p class="lede">Wrap a page in <code>DriftMute</code> (the widget routes do this). While any muted page is open:</p>
+  <div class="tbl"><table>
+    <tr><th>Property</th><th>Full</th><th>Muted</th></tr>
+    <tr><td>Saturation</td><td>100%</td><td>50% toward grey</td></tr>
+    <tr><td>Tone</td><td>—</td><td>55% toward <span class="sw" style="background:#EEF0F6"></span><code>#EEF0F6</code> light, <span class="sw" style="background:#0B0C13"></span><code>#0B0C13</code> dark</td></tr>
+    <tr><td>Drift speed</td><td>1×</td><td>0.4×</td></tr>
+    <tr><td>Accent</td><td>Follows the sky</td><td>Holds still</td></tr>
+    <tr><td>Change</td><td colspan="2">Eases over about 1 s (exponential, rate 3/s) in both directions</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Glass</h2>
+  <p class="lede"><code>Glass</code>: blur σ 22 with 150% saturation (one shared backdrop group), then tint, grain, a 1 px edge and a top highlight that fades out by a third of the height (max 40 px). Turn the blur off for glass that only sits on the sky, where it can't be seen.</p>
+  <div class="tbl"><table>
+    <tr><th>Token</th><th>Light</th><th>Dark</th></tr>
+    <tr><td>Ink</td><td><span class="sw" style="background:#10131D"></span><code>#10131D</code></td><td><span class="sw" style="background:#F2F3FA"></span><code>#F2F3FA</code></td></tr>
+    <tr><td>Sub</td><td><span class="sw" style="background:#2E3446"></span><code>#2E3446</code></td><td><span class="sw" style="background:#C6CAD9"></span><code>#C6CAD9</code></td></tr>
+    <tr><td>Tint</td><td><code>white 38%</code></td><td><code>#0A0C16 34%</code></td></tr>
+    <tr><td>Edge</td><td><code>white 55%</code></td><td><code>white 14%</code></td></tr>
+    <tr><td>Highlight</td><td><code>white 70%</code></td><td><code>white 18%</code></td></tr>
+    <tr><td>Divider</td><td><code>ink 10%</code></td><td><code>white 10%</code></td></tr>
+    <tr><td>Unselected chip / segment</td><td><code>tint</code></td><td><code>white 7%</code></td></tr>
+    <tr><td>Grain peak</td><td><code>0.12</code></td><td><code>0.16</code></td></tr>
+    <tr><td>Radius</td><td colspan="2">Cards 26, groups 22, preview band 28, chips 999</td></tr>
+  </table></div>
+  <div class="grid">
+    <div class="card"><h3>Grain</h3><p>A 96 px grey noise tile made once at startup, shown at 72 logical px with overlay blend. It never moves.</p></div>
+    <div class="card"><h3>Breathing</h3><p>strength = 0.15 + 0.85 × mix of sin(t / 7.3 s) at 0.6 and sin(t / 11.9 s) at 0.4. It fades in and out unevenly, from barely there to fully there. Fixed at 0.6 with reduce motion.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Accent and type</h2>
+  <div class="grid">
+    <div class="card"><h3>Accent from the sky</h3><p>Near glow's top colour → HSL, saturation at least 0.55, lightness 0.40 (light) or 0.72 (dark). Text on it is <code>#FFFFFF</code> or <code>#11131C</code>. It updates only when the hue moves 14° or more, and the theme blends over 1.6 s.</p></div>
+    <div class="card"><h3>Page transitions</h3><p>Pages are see-through, so they fade instead of sliding: the new page fades in and rises 2.5% (420 ms, ease-out cubic) while the old one fades out in the first 60%.</p></div>
+  </div>
+  <div class="type">
+    <div><small>displayLarge · Barlow 96</small><span style="font:700 64px/0.9 var(--f-display)">21:24</span></div>
+    <div><small>headlineMedium · Barlow 30</small><span style="font:700 30px/1 var(--f-display)">WEATHER WIDGET</span></div>
+    <div><small>Value · Barlow 24</small><span style="font:700 24px/1 var(--f-display)">31°</span></div>
+    <div><small>Title · Roboto 15/700</small><span style="font-weight:700">Widget lab</span></div>
+    <div><small>Label · Roboto 11.5/700 +1</small><span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;color:var(--muted)">YOUR WIDGETS</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>App icon</h2>
+  <div class="icon">
+    <img src="art/amn-icon.png" alt="AMN icon: warm, cool and violet orbs overlapping on a night gradient, with fine grain">
+    <div class="mono"><svg width="80" height="80" viewBox="18 18 72 72" aria-label="Themed icon, light"><g fill="#2F3B5C" fill-opacity=".55"><circle cx="43.92" cy="46.8" r="19.48"/><circle cx="64.08" cy="61.2" r="19.48"/><circle cx="63.36" cy="41.76" r="11.81"/></g></svg></div>
+    <div class="mono dk"><svg width="80" height="80" viewBox="18 18 72 72" aria-label="Themed icon, dark"><g fill="#B9C6E6" fill-opacity=".55"><circle cx="43.92" cy="46.8" r="19.48"/><circle cx="64.08" cy="61.2" r="19.48"/><circle cx="63.36" cy="41.76" r="11.81"/></g></svg></div>
+  </div>
+  <p class="lede">An adaptive icon. All the art is in the background layer (the orbs are screen-blended onto the gradient), drawn by <code>tool/make_icon.py</code> at every density. The monochrome layer is three 55% discs inside the 66 dp safe circle.</p>
+</section>
+
+<section>
+  <h2>In the code</h2>
+  <div class="tbl"><table>
+    <tr><th>Piece</th><th>Where</th></tr>
+    <tr><td>Skies, drift maths, accent</td><td><code>packages/amn_ui/lib/src/skies.dart</code></td></tr>
+    <tr><td>Controller, scope, mute, sky painter</td><td><code>packages/amn_ui/lib/src/drift.dart</code></td></tr>
+    <tr><td>Shader</td><td><code>packages/amn_ui/shaders/drift.frag</code></td></tr>
+    <tr><td>Tilt</td><td><code>packages/amn_ui/lib/src/tilt.dart</code> (sensors_plus)</td></tr>
+    <tr><td>Glass, grain, glass app bar</td><td><code>packages/amn_ui/lib/src/glass.dart</code></td></tr>
+    <tr><td>Theme, tokens, type, transitions</td><td><code>packages/amn_ui/lib/src/theme.dart</code></td></tr>
+    <tr><td>Home</td><td><code>lib/home_page.dart</code>; placed widgets come from <code>listWidgets</code> on the <code>amn/widgets</code> channel</td></tr>
+  </table></div>
+</section>
+</main>
+<script>
+// Swatches only: the 28 skies, same table and rules as the widgets' Palettes.kt.
+const T={Clear:{day:['#FFD25A','#FF8F3A'],night:['#101B52','#2C2775'],dawn:['#FFB59A','#FFDFAE'],dusk:['#C2456B','#3E2A7A']},
+'Partly cloudy':{day:['#8CCBFF','#FFD889'],night:['#17265A','#3B4380']},Cloudy:{day:['#C9D3E2','#8E9DB5'],night:['#2C3446','#161B26']},
+Rain:{day:['#4E70AE','#2D4677'],night:['#1C2A48','#0B1324']},Storm:{day:['#4A3B7A','#1D1838'],night:['#1E1236','#08060F']},
+Snow:{day:['#EEF4FF','#BCD0EE'],night:['#2D3D63','#141E37']},Fog:{day:['#E2DCD1','#ADA699'],night:['#3B3934','#1E1C19']}};
+const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)),x=a=>'#'+a.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+const mix=(a,b,t)=>{const A=h(a),B=h(b);return x(A.map((v,i)=>v+(B[i]-v)*t));};
+let out='';
+for(const[c,p]of Object.entries(T))for(const ph of['dawn','day','dusk','night']){
+  let[t,b]=p[ph]||p.day;
+  if(!p[ph]&&ph==='dawn'){t=mix(t,'#FF9E7A',.38);b=mix(b,'#FFD9A8',.25);}
+  if(!p[ph]&&ph==='dusk'){t=mix(t,'#C2456B',.35);b=mix(b,'#3E2A7A',.45);}
+  out+=`<div class="sky" style="background:linear-gradient(165deg,${t},${b})">${c} · ${ph}</div>`;
 }
-
-/* Visibility: only animate what's on screen */
-const visible=new Set();
-const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?visible.add(e.target):visible.delete(e.target)));
-drifts.forEach(x=>io.observe(x.el));
-addEventListener('resize',()=>drifts.forEach(x=>x.d.resize()));
-
-/* Tilt */
-let pointer={x:0,y:0};
-document.addEventListener('pointermove',e=>{pointer={x:(e.clientX/innerWidth-.5)*2,y:(e.clientY/innerHeight-.5)*2};});
-function tiltAt(t){
-  if(S.tilt==='off')return{x:0,y:0};
-  if(S.tilt==='sway')return{x:Math.sin(t*.7),y:Math.cos(t*.5)*.7};
-  return pointer;
-}
-
-/* Clocks and greeting */
-const fmt={short:new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit'}),
-  date:new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long'}),
-  col:new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Colombo',hour:'numeric',minute:'2-digit'})};
-function clocks(){const n=new Date();
-  document.querySelectorAll('[data-clock="short"]').forEach(e=>e.textContent=fmt.short.format(n));
-  document.querySelectorAll('[data-clock="time"]').forEach(e=>e.textContent=fmt.short.format(n));
-  document.querySelectorAll('[data-clock="date"]').forEach(e=>e.textContent=fmt.date.format(n));
-  document.querySelectorAll('[data-clock="colombo"]').forEach(e=>e.textContent=fmt.col.format(n).replace(/\s?[AP]M/,''));
-  document.querySelectorAll('[data-greet]').forEach(e=>e.textContent=greeting(n.getHours()));}
-clocks();setInterval(clocks,10000);
-
-/* Main loop */
-let start=performance.now(),last=0,lastUi=0,frozen=null;
-function frame(now){
-  const real=(now-start)/1000;
-  const t=S.reduce==='on'?(frozen??=real*S.speed):(frozen=null,real*S.speed);
-  const tilt=tiltAt(real);
-  const doUi=now-lastUi>200;
-  for(const x of drifts){
-    if(!visible.has(x.el)&&last)continue;
-    const near=x.d.paint(t,tilt);
-    if(doUi){
-      const dk=x.hero||x.dark;const a=accentFor(near.top,dk);
-      x.el.style.setProperty('--acc',a.acc);x.el.style.setProperty('--acc-ink',a.ink);
-      const name=(near.f<.5?near.from:near.to).name;
-      x.el.querySelectorAll('[data-skyname]').forEach(e=>e.textContent=`Drifting through ${name.toLowerCase()}`);
-      x.el.querySelectorAll('[data-live]').forEach(e=>e.style.background=near.top);
-      if(x.hero){$('#heroNow').textContent=`Now drifting through ${name.toLowerCase()}`;$('#heroDot').style.background=near.top;}
-    }
-  }
-  if(doUi){lastUi=now;drawTimeline(t);}
-  last=now;
-  if(!document.hidden)requestAnimationFrame(frame);
-}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestAnimationFrame(frame);});
-requestAnimationFrame(frame);
-
-/* Timeline: each layer's palette sequence over the next 3 minutes */
-const tl=$('#timeline'),tg=tl.getContext('2d');
-function drawTimeline(t){
-  const r=tl.getBoundingClientRect(),w=tl.width=Math.round(r.width),h=tl.height=150;
-  const dark=matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light'||document.documentElement.dataset.theme==='dark';
-  const skies=dark?SKIES.dark:SKIES.light,span=180,t0=t-20,rowH=h/4;
-  for(let i=0;i<4;i++){const T=LAYERS[i].T;
-    for(let n=Math.floor(t0/T);n*T<t0+span;n++){
-      const p=skies[pick(i,n,skies.length)];const x0=((n*T-t0)/span)*w,x1=(((n+1)*T-t0)/span)*w;
-      const lg=tg.createLinearGradient(x0,0,x1,0);lg.addColorStop(0,p.top);lg.addColorStop(1,p.bot);
-      tg.fillStyle=lg;tg.fillRect(x0,i*rowH+3,x1-x0-2,rowH-6);
-    }
-  }
-  const nx=(20/span)*w;tg.fillStyle=getComputedStyle(document.body).color;tg.fillRect(nx-1,0,2,h);
-}
-
-/* Swatches */
-$('#swatches').innerHTML=SKIES.light.map((p,i)=>`<div class="sw" style="background:linear-gradient(165deg,${p.top},${p.bot})">${p.name}</div>`).join('')+
-  SKIES.dark.map(p=>`<div class="sw" style="background:linear-gradient(165deg,${p.top},${p.bot})">${p.name} · dark</div>`).join('');
-
-/* Controls */
-document.querySelectorAll('[data-ctl]').forEach(seg=>seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  const k=seg.dataset.ctl;S[k]=k==='speed'?+b.dataset.v:b.dataset.v;sync();}));
-function sync(){document.querySelectorAll('[data-ctl]').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(String(S[seg.dataset.ctl])===b.dataset.v))));
-  document.body.classList.toggle('no-grain',S.grain==='off'||S.reduce==='on');}
-sync();
-
-/* ---- App icon compositions ---- */
-const ICONS=[
-  {id:'drift',name:'Drift',note:'Three overlapping orbs, warm, cool and violet, like the background caught in one frame.',
-    bg:['#151735','#2A1F5C'],orbs:[[.36,.40,.33,'#FFB257','#FF5E62'],[.64,.60,.33,'#7FD6FF','#4B63F0'],[.63,.33,.20,'#E39BFF','#9B5CFF']]},
-  {id:'eclipse',name:'Eclipse',note:'A warm orb passing behind a cool one, with a bright rim where they meet.',
-    bg:['#0F1124','#231A44'],orbs:[[.42,.44,.36,'#FFC35C','#FF6A3D'],[.62,.60,.30,'#6AD1FF','#3C4FE0']]},
-  {id:'dusk',name:'Dusk',note:'One large orb rising through a dusk gradient, with a small cool companion.',
-    bg:['#C2456B','#3E2A7A'],orbs:[[.50,.68,.40,'#FFE07A','#FF7A3D'],[.70,.30,.13,'#9FE0FF','#5A7BFF']]},
-];
-function drawIcon(cv,size,ic,mode,shape){
-  const dpr=Math.min(devicePixelRatio||1,2);cv.width=cv.height=size*dpr;cv.style.width=cv.style.height=size+'px';
-  const g=cv.getContext('2d');g.scale(dpr,dpr);const s=size;
-  g.save();g.beginPath();
-  if(shape==='circle')g.arc(s/2,s/2,s/2,0,TAU);
-  else{const r=s*.3;g.moveTo(r,0);g.lineTo(s-r,0);g.quadraticCurveTo(s,0,s,r);g.lineTo(s,s-r);g.quadraticCurveTo(s,s,s-r,s);g.lineTo(r,s);g.quadraticCurveTo(0,s,0,s-r);g.lineTo(0,r);g.quadraticCurveTo(0,0,r,0);}
-  g.clip();
-  if(mode==='color'){
-    const lg=g.createLinearGradient(0,0,s*.3,s);lg.addColorStop(0,ic.bg[0]);lg.addColorStop(1,ic.bg[1]);g.fillStyle=lg;g.fillRect(0,0,s,s);
-    g.globalCompositeOperation='screen';
-    for(const[x,y,r,a,b] of ic.orbs){const rg=g.createRadialGradient(x*s-r*s*.25,y*s-r*s*.3,0,x*s,y*s,r*s);
-      rg.addColorStop(0,'#FFFFFF');rg.addColorStop(.18,a);rg.addColorStop(.75,b);rg.addColorStop(1,rgba(b,0));g.fillStyle=rg;g.fillRect(0,0,s,s);}
-    g.globalCompositeOperation='overlay';g.globalAlpha=.22;
-    const n=document.createElement('canvas');n.width=n.height=64;const ng=n.getContext('2d');const im=ng.createImageData(64,64);
-    for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255;}ng.putImageData(im,0,0);
-    g.fillStyle=g.createPattern(n,'repeat');g.fillRect(0,0,s,s);
-  }else{
-    const darkMode=mode==='mono-dark';g.fillStyle=darkMode?'#1E2433':'#DCE3F2';g.fillRect(0,0,s,s);
-    const fg=darkMode?'#B9C6E6':'#2F3B5C';
-    for(const[x,y,r] of ic.orbs){g.globalAlpha=.55;g.fillStyle=fg;g.beginPath();g.arc(x*s,y*s,r*s*.82,0,TAU);g.fill();}
-    g.globalAlpha=1;
-  }
-  g.restore();
-}
-$('#icons').innerHTML=ICONS.map(ic=>`<div class="icard"><h3>${ic.name}</h3>
-  <div class="irow"><canvas data-i="${ic.id}" data-s="120" data-m="color" data-sh="squircle"></canvas><canvas data-i="${ic.id}" data-s="72" data-m="color" data-sh="circle"></canvas><canvas data-i="${ic.id}" data-s="48" data-m="color" data-sh="squircle"></canvas></div>
-  <div class="irow"><canvas data-i="${ic.id}" data-s="56" data-m="mono-light" data-sh="circle"></canvas><canvas data-i="${ic.id}" data-s="56" data-m="mono-dark" data-sh="circle"></canvas></div>
-  <div class="ihome"><canvas class="bgc" data-bg="${ic.id}"></canvas><div class="apps"><span class="app"><span class="ghost"></span>Clock</span><span class="app"><canvas data-i="${ic.id}" data-s="56" data-m="color" data-sh="squircle"></canvas>AMN</span><span class="app"><span class="ghost"></span>Maps</span></div></div>
-  <p>${ic.note} Top: full color as squircle, circle and 48 px. Middle: the one-color themed icon on light and dark.</p></div>`).join('');
-document.querySelectorAll('#icons canvas[data-i]').forEach(cv=>drawIcon(cv,+cv.dataset.s,ICONS.find(x=>x.id===cv.dataset.i),cv.dataset.m,cv.dataset.sh));
-document.querySelectorAll('#icons canvas[data-bg]').forEach(cv=>{const r=cv.getBoundingClientRect();cv.width=r.width;cv.height=r.height;const g=cv.getContext('2d');
-  const lg=g.createLinearGradient(0,0,r.width,r.height);lg.addColorStop(0,'#2B3150');lg.addColorStop(1,'#5A3A5E');g.fillStyle=lg;g.fillRect(0,0,r.width,r.height);});
-})();
+document.getElementById('skies').innerHTML=out;
 </script>

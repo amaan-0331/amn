@@ -95,11 +95,15 @@ abstract final class AmnTheme {
       secondaryContainer: accent.withValues(alpha: .26),
       onSecondaryContainer: g.ink,
     );
+    // Unselected chips and segments: dark glass is too heavy at that size.
+    final control = brightness == Brightness.dark ? const Color(0x12FFFFFF) : g.tint;
     final base = ThemeData(colorScheme: scheme, useMaterial3: true);
     final text = base.textTheme.apply(bodyColor: g.ink, displayColor: g.ink);
     return base.copyWith(
       extensions: [g],
       scaffoldBackgroundColor: Colors.transparent,
+      // Chips and other bare Materials fall back to this; over the sky it must be clear.
+      canvasColor: Colors.transparent,
       textTheme: text.copyWith(
         displayLarge: AmnType.display(96, color: g.ink, height: .9),
         displayMedium: AmnType.display(64, color: g.ink, height: .95),
@@ -119,10 +123,19 @@ abstract final class AmnTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           side: WidgetStatePropertyAll(BorderSide(color: g.edge)),
-          backgroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? accent : g.tint),
+          backgroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? accent : control),
           foregroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? onAccent(brightness) : g.ink),
           iconColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? onAccent(brightness) : g.ink),
         ),
+      ),
+      chipTheme: ChipThemeData(
+        color: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? accent.withValues(alpha: .30) : control),
+        backgroundColor: control,
+        selectedColor: accent.withValues(alpha: .30),
+        surfaceTintColor: Colors.transparent,
+        side: BorderSide(color: g.edge),
+        labelStyle: TextStyle(color: g.ink, fontWeight: FontWeight.w600),
+        checkmarkColor: g.ink,
       ),
       searchBarTheme: SearchBarThemeData(
         backgroundColor: WidgetStatePropertyAll(g.tint),

@@ -54,13 +54,8 @@ import java.time.Instant
 import java.time.ZoneId
 
 class ClockWidget : GlanceAppWidget() {
-    companion object {
-        val TINY = DpSize(70.dp, 70.dp)
-        val SMALL = DpSize(140.dp, 70.dp)
-        val SQUARE = DpSize(140.dp, 140.dp)
-    }
-
-    override val sizeMode = SizeMode.Responsive(setOf(TINY, SMALL, SQUARE))
+    // Exact: the layout is picked from the real size and shape (see ClockLayout.of).
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }
@@ -92,6 +87,22 @@ class ClockWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 }
 
+/** The three clock layouts and their design sizes (dp). */
+internal enum class ClockLayout(val w: Float, val h: Float) {
+    TINY(70f, 70f), SMALL(140f, 70f), SQUARE(140f, 140f);
+
+    companion object {
+        fun of(size: DpSize): ClockLayout {
+            val ratio = size.width.value / size.height.value
+            return when {
+                ratio >= 1.4f -> SMALL
+                size.width < 120.dp -> TINY // 1×1 is ~70 dp (design) to ~100 dp (One UI); 2×2 is 140–200
+                else -> SQUARE
+            }
+        }
+    }
+}
+
 @Composable
 private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = null) {
     val context = LocalContext.current
@@ -108,8 +119,11 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
     val ink = ColorProvider(Color(pal.ink))
     val offset = CityOffset.between(zone, ZoneId.systemDefault(), now).label
 
-    val tiny = size.width < ClockWidget.SMALL.width
-    val square = size.height >= ClockWidget.SQUARE.height
+    val layout = ClockLayout.of(size)
+    val fit = fitFor(size, layout.w, layout.h, maxK = 1.8f)
+    val k = fit::dp
+    val tiny = layout == ClockLayout.TINY
+    val square = layout == ClockLayout.SQUARE
     val withSeconds = s.seconds && !tiny
     val pattern = buildString {
         append(if (s.h24) "HH" else "h")
@@ -118,22 +132,25 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
         if (withSeconds) append(":ss")
         if (!s.h24 && !tiny) append(" a")
     }
-    // Sized so "HH:mm:ss" and "h:mm:ss a" still fit on one line.
-    val timeSize = when {
-        tiny -> 23f
-        square -> if (withSeconds || !s.h24) 38f else 52f
-        else -> if (withSeconds || !s.h24) 28f else 36f
+    // The design size, shrunk when the format wouldn't fit the width on one line.
+    val designTime = when (layout) {
+        ClockLayout.TINY -> 23f
+        ClockLayout.SQUARE -> 52f
+        ClockLayout.SMALL -> 36f
     }
-    val artSize = when {
-        tiny -> 40
-        square -> 88
-        else -> 56
+    val available = (layout.w - 24f) * fit.k
+    val timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
+    val artSize = fit.k * when (layout) {
+        ClockLayout.TINY -> 40f
+        ClockLayout.SQUARE -> 88f
+        ClockLayout.SMALL -> 56f
     }
     val phaseLabel = when (phase) {
         Phase.DAWN -> "Dawn"; Phase.DAY -> "Day"; Phase.DUSK -> "Dusk"; Phase.NIGHT -> "Night"
     }
     // By day the sun sits high in the corner; at dawn and dusk it sits half below the bottom edge.
     val low = phase == Phase.DAWN || phase == Phase.DUSK
+    fun style(sp: Float, weight: FontWeight) = TextStyle(color = ink, fontSize = fit.sp(sp).sp, fontWeight = weight)
 
     Box(
         modifier = GlanceModifier.fillMaxSize()
@@ -144,23 +161,24 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
     ) {
         if (low) {
             val sun = Horizon.topHalf(context, Art.drawable(Condition.CLEAR, phase))
-            Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8).dp).height((artSize * .8 * .55).dp))
+            Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8f).dp).height((artSize * .8f * .55f).dp))
         } else {
             // Runs off the top-right corner by a fifth, as in the design.
-            BleedArt(Art.drawable(Condition.CLEAR, phase), artSize.toFloat(), bleedRight = artSize * .2f, bleedTop = artSize * .2f)
+            BleedArt(Art.drawable(Condition.CLEAR, phase), artSize, bleedRight = artSize * .2f, bleedTop = artSize * .2f)
         }
-        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 12.dp, vertical = if (square) 10.dp else 7.dp)) {
+        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = k(12f), vertical = k(if (square) 10f else 7f))) {
             val title = s.cityName ?: "Choose a city"
-            Text(
-                if (tiny) cityCode(title) else title,
-                style = TextStyle(color = ink, fontSize = if (square) 15.sp else 11.5.sp, fontWeight = FontWeight.Bold),
-                maxLines = 1,
-            )
-            if (square) Text(phaseLabel, style = TextStyle(color = ink, fontSize = 11.5.sp, fontWeight = FontWeight.Medium))
+            Text(if (tiny) cityCode(title) else title, style = style(if (square) 15f else 11.5f, FontWeight.Bold), maxLines = 1)
+            if (square) Text(phaseLabel, style = style(11.5f, FontWeight.Medium))
             Spacer(GlanceModifier.defaultWeight())
-            // AndroidRemoteViews otherwise takes all remaining height and pushes the offset line out.
-            ClockText(zone.id, pattern, timeSize, pal.ink, GlanceModifier.height((timeSize * if (tiny) 1.75f else .95f).dp))
-            if (!tiny) Text(offset, style = TextStyle(color = ink, fontSize = if (square) 11.sp else 10.5.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+            // The time is part of the layout, so it's sized in dp and ignores the font-size setting.
+            // A fixed height stops AndroidRemoteViews from taking all remaining space.
+            ClockText(
+                zone.id, pattern, timeSize, pal.ink,
+                GlanceModifier.height((timeSize * if (tiny) 2.05f else 1.0f).dp),
+                unit = android.util.TypedValue.COMPLEX_UNIT_DIP,
+            )
+            if (!tiny) Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
         }
     }
 }
@@ -169,4 +187,15 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int? = n
 internal fun cityCode(name: String): String {
     val words = name.split(' ', '-').filter { it.isNotBlank() }
     return (if (words.size > 1) words.joinToString("") { it.take(1) } else name.take(3)).uppercase()
+}
+
+/**
+ * Rough width of a time pattern in ems for the system's condensed bold face:
+ * digits about 0.56 em, separators and spaces 0.27 em, "AM"/"PM" 1.25 em.
+ */
+internal fun timeWidthEm(pattern: String): Float {
+    val digits = pattern.count { it == 'H' || it == 'm' || it == 's' } + if (pattern.startsWith("h")) 2 else 0
+    val separators = pattern.count { it == ':' || it == ' ' }
+    val amPm = if (pattern.contains('a')) 1.25f else 0f
+    return digits * .56f + separators * .27f + amPm
 }

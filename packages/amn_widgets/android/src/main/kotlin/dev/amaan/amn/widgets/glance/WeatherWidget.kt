@@ -63,17 +63,12 @@ import java.util.Locale
 
 class WeatherWidget : GlanceAppWidget() {
     companion object {
-        val SMALL = DpSize(140.dp, 70.dp)
-        val SQUARE = DpSize(140.dp, 140.dp)
-        val WIDE = DpSize(290.dp, 140.dp)
-        val TALL = DpSize(290.dp, 215.dp)
-        val LARGE = DpSize(290.dp, 290.dp)
-
         /** After this, the widget shows a warning next to the time. */
         const val STALE_MS = 3 * 60 * 60_000L
     }
 
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, SQUARE, WIDE, TALL, LARGE))
+    // Exact: the layout is picked from the real size and shape (see WeatherLayout.of).
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }
@@ -118,14 +113,37 @@ private val CONDITION_LABEL = mapOf(
     Condition.RAIN to "Rain", Condition.STORM to "Thunderstorm", Condition.SNOW to "Snow", Condition.FOG to "Fog",
 )
 
-private class Look(val pal: WidgetPalette) {
+private class Look(val pal: WidgetPalette, val fit: Fit) {
     val ink = ColorProvider(Color(pal.ink))
     val fill = ColorProvider(Color(pal.ink).copy(alpha = .15f))
     val panel = ColorProvider(Color(pal.ink).copy(alpha = .11f))
     val track = ColorProvider(Color(pal.ink).copy(alpha = .18f))
+
+    /** Text at a design size in sp, scaled to the widget. */
     fun style(sp: Float, weight: FontWeight = FontWeight.Medium, align: TextAlign = TextAlign.Start) =
-        TextStyle(color = ink, fontSize = sp.sp, fontWeight = weight, textAlign = align)
-    val numberFamily = FontFamily("sans-serif-condensed")
+        TextStyle(color = ink, fontSize = fit.sp(sp).sp, fontWeight = weight, textAlign = align)
+
+    @Composable
+    fun Num(text: String, designDp: Float) = Numeral(text, designDp * fit.k, pal.ink)
+}
+
+/** The five weather layouts and their design sizes (dp). */
+internal enum class WeatherLayout(val w: Float, val h: Float) {
+    SMALL(140f, 70f), SQUARE(140f, 140f), WIDE(290f, 140f), TALL(290f, 215f), LARGE(290f, 290f);
+
+    companion object {
+        /** By width and shape: 4×2 is about twice as wide as tall, 4×3 a bit wider than tall. */
+        fun of(size: DpSize): WeatherLayout {
+            val ratio = size.height.value / size.width.value
+            return if (size.width < 215.dp) {
+                if (ratio < .75f) SMALL else SQUARE
+            } else when {
+                ratio < .66f -> WIDE
+                ratio < .9f -> TALL
+                else -> LARGE
+            }
+        }
+    }
 }
 
 @Composable
@@ -149,19 +167,19 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
     }
     val zone = cached?.raw?.timeZone?.takeIf { live != null }
 
+    val layout = WeatherLayout.of(size)
+    val fit = fitFor(size, layout.w, layout.h)
     val phase = TimeOfDay.phase(localNow.hour * 60 + localNow.minute, f.sunriseMin, f.sunsetMin)
-    val look = Look(Palettes.of(f.condition, phase, context.isNightMode()))
+    val look = Look(Palettes.of(f.condition, phase, context.isNightMode()), fit)
     val h24 = debug?.h24 ?: DateFormat.is24HourFormat(context)
     val line = Summary.of(f).english(h24)
     val u = state.units
     fun t(c: Double) = "${u.temp(c)}°"
     val place = if (state.settings.useGps) cached?.placeName ?: "Current location" else state.settings.cityName
     val stale = live != null && System.currentTimeMillis() - f.fetchedAtEpochMs > WeatherWidget.STALE_MS
-
-    val wide = size.width >= WeatherWidget.WIDE.width
-    val tall = size.height >= WeatherWidget.SQUARE.height
-    val big = wide && size.height >= WeatherWidget.TALL.height
-    val large = wide && size.height >= WeatherWidget.LARGE.height
+    val big = layout == WeatherLayout.TALL || layout == WeatherLayout.LARGE
+    val wide = layout != WeatherLayout.SMALL && layout != WeatherLayout.SQUARE
+    val k = fit::dp
 
     Box(
         modifier = GlanceModifier.fillMaxSize()
@@ -170,66 +188,71 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
             .clickable(openEditPage(context, appWidgetId, "weather")),
         contentAlignment = Alignment.TopEnd,
     ) {
-        // Art sizes and how far they run off the corner, from the design spec (dp).
+        // Art size and how far it runs off the corner, from the design (dp, before scaling).
         val art = Art.drawable(f.condition, phase)
-        when {
-            big -> BleedArt(art, 118f, bleedRight = 12f, modifier = GlanceModifier.padding(top = 30.dp))
-            wide -> BleedArt(art, 104f, bleedRight = 8f, bleedTop = 16f)
-            tall -> BleedArt(art, 96f, bleedRight = 18f, bleedTop = 14f)
-            else -> BleedArt(art, 64f, bleedRight = 10f, modifier = GlanceModifier.padding(top = 3.dp))
+        when (layout) {
+            WeatherLayout.TALL, WeatherLayout.LARGE -> BleedArt(art, 118 * fit.k, bleedRight = 12 * fit.k, modifier = GlanceModifier.padding(top = k(30f)))
+            WeatherLayout.WIDE -> BleedArt(art, 104 * fit.k, bleedRight = 8 * fit.k, bleedTop = 16 * fit.k)
+            WeatherLayout.SQUARE -> BleedArt(art, 96 * fit.k, bleedRight = 18 * fit.k, bleedTop = 14 * fit.k)
+            WeatherLayout.SMALL -> BleedArt(art, 64 * fit.k, bleedRight = 10 * fit.k, modifier = GlanceModifier.padding(top = k(3f)))
         }
+        val padH = if (big) 14f else 12f
         Column(
             GlanceModifier.fillMaxSize().padding(
-                start = if (big) 14.dp else 12.dp,
-                end = if (big) 14.dp else 12.dp,
-                top = if (big) 13.dp else if (wide) 11.dp else if (tall) 12.dp else 9.dp,
-                bottom = if (big) 13.dp else if (wide) 8.dp else if (tall) 12.dp else 9.dp,
+                start = k(padH), end = k(padH),
+                top = k(if (big) 13f else if (wide) 11f else if (layout == WeatherLayout.SQUARE) 12f else 9f),
+                bottom = k(if (big) 13f else if (wide) 9f else if (layout == WeatherLayout.SQUARE) 12f else 9f),
             ),
         ) {
+            val metaSize = when {
+                big -> 12f
+                layout == WeatherLayout.SMALL -> 10.5f
+                else -> 11f
+            }
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                val metaSize = when {
-                    big -> 12f
-                    wide || tall -> 11f
-                    else -> 10.5f
-                }
                 Text(ellipsize(place, if (wide) 22 else 11), style = look.style(metaSize, FontWeight.Bold), maxLines = 1)
                 Text(" · ", style = look.style(metaSize))
-                ClockText(zone, if (h24) "HH:mm" else "h:mm a", metaSize, look.pal.ink)
+                ClockText(zone, if (h24) "HH:mm" else "h:mm a", fit.sp(metaSize), look.pal.ink)
                 if (stale && !big) Text("  ⚠", style = look.style(metaSize, FontWeight.Bold))
                 if (big) {
                     Spacer(GlanceModifier.defaultWeight())
                     Text(updatedLabel(f.fetchedAtEpochMs, live == null, stale), style = look.style(10f), maxLines = 1)
                 }
             }
-            when {
-                big -> {
-                    Text(line, style = look.style(18f, FontWeight.Bold), maxLines = 1, modifier = GlanceModifier.padding(top = 6.dp, bottom = 6.dp).width(190.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Numeral(t(f.nowTempC), 68f, look.pal.ink)
-                        Column(GlanceModifier.padding(start = 10.dp)) {
-                            Text(CONDITION_LABEL.getValue(f.condition), style = look.style(11.5f, FontWeight.Bold))
-                            Text("Feels ${t(f.feelsLikeC)}", style = look.style(11.5f))
-                            Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f))
+            // Leftover height is shared between the gaps (weighted spacers), not dumped in one place.
+            when (layout) {
+                WeatherLayout.TALL, WeatherLayout.LARGE -> {
+                    Spacer(GlanceModifier.defaultWeight())
+                    // Grouped: Glance drops anything past a Column's tenth child.
+                    Column {
+                        Text(line, style = look.style(18f, FontWeight.Bold), maxLines = 1, modifier = GlanceModifier.width(k(190f)))
+                        Spacer(GlanceModifier.height(k(6f)))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            look.Num(t(f.nowTempC), 68f)
+                            Column(GlanceModifier.padding(start = k(10f))) {
+                                Text(CONDITION_LABEL.getValue(f.condition), style = look.style(11.5f, FontWeight.Bold))
+                                Text("Feels ${t(f.feelsLikeC)}", style = look.style(11.5f))
+                                Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f))
+                            }
+                        }
+                        Spacer(GlanceModifier.height(k(7f)))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(ImageProvider(dev.amaan.amn.widgets.R.drawable.amn_droplet), null, GlanceModifier.size(k(13f)))
+                            Text(" ${f.today.pop}% chance · ${amount(f, u)} today", style = look.style(11.5f), maxLines = 1)
                         }
                     }
-                    Row(GlanceModifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Image(ImageProvider(dev.amaan.amn.widgets.R.drawable.amn_droplet), null, GlanceModifier.size(13.dp))
-                        Text(" ${f.today.pop}% chance · ${amount(f, u)} today", style = look.style(11.5f), maxLines = 1)
-                    }
-                    if (large) {
-                        Spacer(GlanceModifier.height(8.dp))
-                        HourlyStrip(f, look, u, withPop = true, h24 = h24)
+                    Spacer(GlanceModifier.defaultWeight())
+                    HourlyStrip(f, look, u, withPop = true, h24 = h24)
+                    if (layout == WeatherLayout.LARGE) {
                         Spacer(GlanceModifier.defaultWeight())
-                        DailyRows(f, look, u, rowWidth = size.width - 28.dp)
-                    } else {
-                        Spacer(GlanceModifier.defaultWeight())
-                        HourlyStrip(f, look, u, withPop = true, h24 = h24)
+                        DailyRows(f, look, u, rowWidth = size.width - k(padH) * 2)
                     }
                 }
-                wide -> {
-                    Row(GlanceModifier.padding(top = 3.dp), verticalAlignment = Alignment.Bottom) {
-                        Numeral(t(f.nowTempC), 52f, look.pal.ink)
-                        Column(GlanceModifier.padding(start = 10.dp).width(150.dp)) {
+                WeatherLayout.WIDE -> {
+                    Spacer(GlanceModifier.defaultWeight())
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        look.Num(t(f.nowTempC), 52f)
+                        Column(GlanceModifier.padding(start = k(10f)).width(k(160f))) {
                             Text(line, style = look.style(14f, FontWeight.Bold), maxLines = 1)
                             Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)} · Feels ${t(f.feelsLikeC)}", style = look.style(10.5f), maxLines = 1)
                         }
@@ -237,18 +260,18 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     Spacer(GlanceModifier.defaultWeight())
                     HourlyStrip(f, look, u, withPop = false, h24 = h24)
                 }
-                tall -> {
+                WeatherLayout.SQUARE -> {
                     Spacer(GlanceModifier.defaultWeight())
-                    Numeral(t(f.nowTempC), 60f, look.pal.ink)
-                    Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(top = 4.dp))
+                    look.Num(t(f.nowTempC), 60f)
+                    Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(top = k(4f)))
                     Spacer(GlanceModifier.defaultWeight())
-                    Box(GlanceModifier.background(look.fill).cornerRadius(14.dp).padding(horizontal = 10.dp, vertical = 5.dp)) {
+                    Box(GlanceModifier.background(look.fill).cornerRadius(k(14f)).padding(horizontal = k(10f), vertical = k(5f))) {
                         Text(line, style = look.style(12f, FontWeight.Bold), maxLines = 1)
                     }
                 }
-                else -> {
+                WeatherLayout.SMALL -> {
                     Spacer(GlanceModifier.defaultWeight())
-                    Numeral(t(f.nowTempC), 34f, look.pal.ink)
+                    look.Num(t(f.nowTempC), 34f)
                     Spacer(GlanceModifier.defaultWeight())
                     Text(ellipsize(line, 17), style = look.style(11.5f, FontWeight.Bold), maxLines = 1)
                 }
@@ -259,16 +282,17 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
 
 @Composable
 private fun HourlyStrip(f: Forecast, look: Look, u: Units, withPop: Boolean, h24: Boolean) {
+    val k = look.fit::dp
     Row(
-        GlanceModifier.fillMaxWidth().background(look.panel).cornerRadius(14.dp).padding(vertical = 5.dp),
+        GlanceModifier.fillMaxWidth().background(look.panel).cornerRadius(k(14f)).padding(vertical = k(5f)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         f.hourly.take(6).forEachIndexed { i, h ->
             val phase = TimeOfDay.phase(h.hour * 60, f.sunriseMin, f.sunsetMin)
             Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(if (i == 0) "Now" else hourLabel(h.hour, h24), style = look.style(9.5f, FontWeight.Medium, TextAlign.Center), maxLines = 1)
-                Image(ImageProvider(Art.drawable(h.condition, phase)), null, GlanceModifier.size(if (withPop) 16.dp else 14.dp).padding(vertical = 1.dp))
-                Numeral("${u.temp(h.tempC)}°", 14f, look.pal.ink)
+                Image(ImageProvider(Art.drawable(h.condition, phase)), null, GlanceModifier.size(k(if (withPop) 16f else 14f)).padding(vertical = k(1f)))
+                look.Num("${u.temp(h.tempC)}°", 14f)
                 if (withPop) Text(if (h.pop >= 20) "${h.pop}%" else " ", style = look.style(9.5f, FontWeight.Bold, TextAlign.Center))
             }
         }
@@ -277,31 +301,32 @@ private fun HourlyStrip(f: Forecast, look: Look, u: Units, withPop: Boolean, h24
 
 @Composable
 private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp) {
+    val k = look.fit::dp
     val all = f.days.flatMap { listOf(it.lowC, it.highC) }
     val mn = all.min()
     val span = (all.max() - mn).coerceAtLeast(1.0)
-    // Fixed columns: day 58, icon 18, chance 30, low 26, high 26, plus five 6dp gaps.
-    val barWidth = (rowWidth - 188.dp).coerceAtLeast(30.dp)
+    // Fixed columns: day 58, icon 18, chance 30, low 26, high 26, plus five 6dp gaps (188 in all).
+    val barWidth = (rowWidth - k(188f)).coerceAtLeast(k(30f))
     Column(GlanceModifier.fillMaxWidth()) {
         f.days.take(3).forEachIndexed { i, d ->
-            Row(GlanceModifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(if (i == 0) "Tomorrow" else d.weekday, style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.width(58.dp))
-                Spacer(GlanceModifier.width(6.dp))
-                Image(ImageProvider(Art.drawable(d.condition, Phase.DAY)), null, GlanceModifier.size(18.dp))
-                Spacer(GlanceModifier.width(6.dp))
-                Text(if (d.pop >= 20) "${d.pop}%" else "", style = look.style(10f, FontWeight.Bold), modifier = GlanceModifier.width(30.dp))
-                Box(GlanceModifier.width(26.dp), contentAlignment = Alignment.CenterEnd) { Numeral("${u.temp(d.lowC)}°", 15f, look.pal.ink) }
-                Spacer(GlanceModifier.width(6.dp))
+            Row(GlanceModifier.fillMaxWidth().padding(vertical = k(3f)), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (i == 0) "Tomorrow" else d.weekday, style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.width(k(58f)))
+                Spacer(GlanceModifier.width(k(6f)))
+                Image(ImageProvider(Art.drawable(d.condition, Phase.DAY)), null, GlanceModifier.size(k(18f)))
+                Spacer(GlanceModifier.width(k(6f)))
+                Text(if (d.pop >= 20) "${d.pop}%" else "", style = look.style(10f, FontWeight.Bold), modifier = GlanceModifier.width(k(30f)))
+                Box(GlanceModifier.width(k(26f)), contentAlignment = Alignment.CenterEnd) { look.Num("${u.temp(d.lowC)}°", 15f) }
+                Spacer(GlanceModifier.width(k(6f)))
                 val start = barWidth * ((d.lowC - mn) / span).toFloat()
-                val fill = (barWidth * ((d.highC - d.lowC) / span).toFloat()).coerceAtLeast(6.dp)
-                Box(GlanceModifier.width(barWidth).height(5.dp).background(look.track).cornerRadius(3.dp)) {
+                val fill = (barWidth * ((d.highC - d.lowC) / span).toFloat()).coerceAtLeast(k(6f))
+                Box(GlanceModifier.width(barWidth).height(k(5f)).background(look.track).cornerRadius(k(3f))) {
                     Row {
                         Spacer(GlanceModifier.width(start))
-                        Box(GlanceModifier.width(fill).height(5.dp).background(look.ink).cornerRadius(3.dp)) {}
+                        Box(GlanceModifier.width(fill).height(k(5f)).background(look.ink).cornerRadius(k(3f))) {}
                     }
                 }
-                Spacer(GlanceModifier.width(6.dp))
-                Box(GlanceModifier.width(26.dp), contentAlignment = Alignment.CenterEnd) { Numeral("${u.temp(d.highC)}°", 15f, look.pal.ink) }
+                Spacer(GlanceModifier.width(k(6f)))
+                Box(GlanceModifier.width(k(26f)), contentAlignment = Alignment.CenterEnd) { look.Num("${u.temp(d.highC)}°", 15f) }
             }
         }
     }
@@ -312,7 +337,7 @@ private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp) {
 private fun LoadingContent(state: WeatherState, appWidgetId: Int) {
     val context = LocalContext.current
     val now = LocalTime.now()
-    val look = Look(Palettes.of(Condition.CLOUDY, TimeOfDay.phaseForHour(now.hour, now.minute), context.isNightMode()))
+    val look = Look(Palettes.of(Condition.CLOUDY, TimeOfDay.phaseForHour(now.hour, now.minute), context.isNightMode()), Fit(1f))
     Box(
         modifier = GlanceModifier.fillMaxSize()
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)

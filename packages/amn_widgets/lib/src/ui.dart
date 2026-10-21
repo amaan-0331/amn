@@ -9,12 +9,32 @@ import 'geocoding.dart';
 
 /// A widget size the preview can show, in dp.
 class PreviewSize {
-  const PreviewSize(this.label, this.width, this.height);
+  const PreviewSize(this.label, this.width, this.height, {this.hostScale = 1});
 
   final String label;
+
+  /// The size the launcher reports (and the widget lays out at).
   final double width;
   final double height;
+
+  /// How much the launcher shrinks the result; One UI uses about 0.83.
+  final double hostScale;
 }
+
+/// Sizes One UI reports on a 4-column home screen (Galaxy A55), with its 0.83 shrink.
+const oneUiWeatherSizes = [
+  PreviewSize('2×1', 200.5, 113, hostScale: .8333),
+  PreviewSize('2×2', 200.5, 226, hostScale: .8333),
+  PreviewSize('4×2', 401, 226, hostScale: .8333),
+  PreviewSize('4×3', 401, 339, hostScale: .8333),
+  PreviewSize('4×4', 401, 452, hostScale: .8333),
+];
+
+const oneUiClockSizes = [
+  PreviewSize('1×1', 100, 113, hostScale: .8333),
+  PreviewSize('2×1', 200.5, 113, hostScale: .8333),
+  PreviewSize('2×2', 200.5, 226, hostScale: .8333),
+];
 
 const weatherSizes = [
   PreviewSize('2×1', 140, 70),
@@ -66,6 +86,7 @@ class _WidgetPreviewState extends State<WidgetPreview> {
         'widgetId': widget.widgetId,
         'width': widget.size.width,
         'height': widget.size.height,
+        'hostScale': widget.size.hostScale,
         'settings': widget.settings,
         if (widget.debug != null) 'debug': widget.debug,
       };
@@ -83,8 +104,8 @@ class _WidgetPreviewState extends State<WidgetPreview> {
   Widget build(BuildContext context) {
     // Flutter logical pixels match Android dp, so the sizes carry over directly.
     return SizedBox(
-      width: widget.size.width,
-      height: widget.size.height,
+      width: widget.size.width * widget.size.hostScale,
+      height: widget.size.height * widget.size.hostScale,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: IgnorePointer(

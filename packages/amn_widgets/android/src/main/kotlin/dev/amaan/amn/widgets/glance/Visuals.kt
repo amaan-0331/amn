@@ -69,7 +69,7 @@ internal fun BleedArt(resId: Int, size: Float, bleedRight: Float = 0f, bleedTop:
         provider = androidx.glance.ImageProvider(bmp),
         contentDescription = null,
         modifier = modifier.width((size - bleedRight).dp).height((size - bleedTop).dp),
-        contentScale = androidx.glance.layout.ContentScale.FillBounds,
+        contentScale = androidx.glance.layout.ContentScale.Fit,
     )
 }
 
@@ -123,14 +123,14 @@ internal fun openEditPage(context: Context, appWidgetId: Int, kind: String): Act
  * [zone] null means the phone's own time zone.
  */
 @Composable
-internal fun ClockText(zone: String?, pattern: String, sizeSp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
+internal fun ClockText(zone: String?, pattern: String, size: Float, color: Int, modifier: GlanceModifier = GlanceModifier, unit: Int = TypedValue.COMPLEX_UNIT_SP) {
     val context = LocalContext.current
     val rv = RemoteViews(context.packageName, R.layout.amn_text_clock).apply {
         setCharSequence(R.id.amn_clock, "setFormat24Hour", pattern)
         setCharSequence(R.id.amn_clock, "setFormat12Hour", pattern)
         if (zone != null) setString(R.id.amn_clock, "setTimeZone", zone)
         setTextColor(R.id.amn_clock, color)
-        setTextViewTextSize(R.id.amn_clock, TypedValue.COMPLEX_UNIT_SP, sizeSp)
+        setTextViewTextSize(R.id.amn_clock, unit, size)
     }
     AndroidRemoteViews(rv, modifier)
 }
@@ -144,11 +144,12 @@ internal object Numerals {
     private val cache = object : android.util.LruCache<String, Bitmap>(48) {}
     private var typeface: android.graphics.Typeface? = null
 
-    fun render(context: Context, text: String, sizeSp: Float, color: Int): Bitmap {
-        val key = "$text|$sizeSp|$color"
+    /** [sizeDp] is in dp: numbers are part of the layout, so they don't follow the font-size setting. */
+    fun render(context: Context, text: String, sizeDp: Float, color: Int): Bitmap {
+        val key = "$text|$sizeDp|$color"
         cache.get(key)?.let { return it }
         val tf = typeface ?: context.resources.getFont(R.font.amn_barlow_condensed_bold).also { typeface = it }
-        val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, context.resources.displayMetrics)
+        val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp, context.resources.displayMetrics)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.typeface = tf
             textSize = px
@@ -170,11 +171,11 @@ internal object Numerals {
     }
 }
 
-/** A number in Barlow Condensed at [sizeSp]; its box is exactly the digit height. */
+/** A number in Barlow Condensed at [sizeDp]; its box is exactly the digit height. */
 @Composable
-internal fun Numeral(text: String, sizeSp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
+internal fun Numeral(text: String, sizeDp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
     val context = LocalContext.current
-    val bmp = Numerals.render(context, text, sizeSp, color)
+    val bmp = Numerals.render(context, text, sizeDp, color)
     val density = context.resources.displayMetrics.density
     androidx.glance.Image(
         provider = androidx.glance.ImageProvider(bmp),
@@ -183,3 +184,16 @@ internal fun Numeral(text: String, sizeSp: Float, color: Int, modifier: GlanceMo
         contentScale = androidx.glance.layout.ContentScale.Fit,
     )
 }
+
+/**
+ * How a widget fits its space. Launchers report sizes differently (One UI reports a larger
+ * size and scales the result down), so layouts are picked by shape and width rather than by
+ * fixed breakpoints, and the design's measurements are scaled by [k] to fill the space.
+ */
+internal data class Fit(val k: Float) {
+    fun dp(v: Float) = (v * k).dp
+    fun sp(v: Float) = v * k
+}
+
+internal fun fitFor(size: androidx.compose.ui.unit.DpSize, designWidth: Float, designHeight: Float, maxK: Float = 1.6f) =
+    Fit(minOf(size.width.value / designWidth, size.height.value / designHeight).coerceIn(.8f, maxK))

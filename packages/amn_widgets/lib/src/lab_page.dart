@@ -6,7 +6,7 @@ import 'ui.dart';
 /// with overrides for condition, hour, dark mode and units.
 ///
 /// Open it from the command line with any state, for example:
-/// adb shell am start -n dev.amaan.amn/.MainActivity --es route "/widget/lab?cond=rain&hour=21&dark=1&kind=weather"
+/// adb shell am start -n dev.amaan.amn/.MainActivity --es route "/widget/lab?cond=rain&hour=21&dark=1&kind=weather&grid=oneui"
 class WidgetLabPage extends StatefulWidget {
   const WidgetLabPage({super.key, this.query = const {}});
 
@@ -33,6 +33,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   late bool _seconds = widget.query['secs'] == '1';
   late String _zone = _pick(widget.query['city'], _clockCities.keys.toList(), 'Asia/Tokyo');
   late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both'], 'both');
+  late bool _oneUi = widget.query['grid'] == 'oneui';
 
   static String _pick(String? v, List<String> allowed, String fallback) => allowed.contains(v) ? v! : fallback;
 
@@ -94,11 +95,12 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               ChoiceChip(label: Text(e.value.$1), selected: e.key == _zone, showCheckmark: false, onSelected: (_) => setState(() => _zone = e.key)),
             for (final k in ['both', 'weather', 'clock'])
               ChoiceChip(label: Text(k), selected: k == _kind, showCheckmark: false, onSelected: (_) => setState(() => _kind = k)),
+            FilterChip(label: const Text('One UI grid'), selected: _oneUi, onSelected: (v) => setState(() => _oneUi = v)),
           ]),
           if (_kind != 'clock')
-            for (final s in weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),
+            for (final s in _oneUi ? oneUiWeatherSizes : weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),
           if (_kind != 'weather')
-            for (final s in clockSizes) _Slot(label: 'Clock ${s.label}', child: WidgetPreview(kind: 'clock', widgetId: -1, size: s, settings: _clockSettings, debug: _debug)),
+            for (final s in _oneUi ? oneUiClockSizes : clockSizes) _Slot(label: 'Clock ${s.label}', child: WidgetPreview(kind: 'clock', widgetId: -1, size: s, settings: _clockSettings, debug: _debug)),
         ],
       ),
     );

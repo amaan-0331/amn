@@ -41,7 +41,7 @@ units, 12/24h, seconds and clock city. Open it in any state from the command lin
 adb shell am start -n dev.amaan.amn/.MainActivity --es route "'/widget/lab?cond=rain&hour=21&dark=1&kind=weather'"
 ```
 
-Query keys: `cond` (clear, partly, cloudy, rain, storm, snow, fog), `hour` (0–23), `dark` (0/1),
+Query keys: `grid` (`oneui` renders at the sizes One UI reports and shrinks them by 0.83, like a Galaxy home screen), `cond` (clear, partly, cloudy, rain, storm, snow, fog), `hour` (0–23), `dark` (0/1),
 `f` (1 for °F), `h24` (0/1), `secs` (0/1), `city` (Asia/Tokyo, America/New_York, Europe/London,
 Asia/Dubai), `kind` (weather, clock, both). Grab the screen with `adb exec-out screencap -p > lab.png`.
 

@@ -70,6 +70,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
             )
         }
         val dark = lab?.get("dark") as? Boolean
+        val hostScale = (args["hostScale"] as? Number)?.toFloat() ?: 1f
         job?.cancel()
         job = scope.launch {
             val ctx = if (dark == null) frame.context else frame.context.withNightMode(dark)
@@ -84,7 +85,13 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
             // Inflate like a launcher does: a restricted context, which ignores @font and similar resources.
             val hostCtx = runCatching { ctx.createPackageContext(ctx.packageName, Context.CONTEXT_RESTRICTED) }.getOrDefault(ctx)
             val hostView = rv.apply(if (dark == null) hostCtx else hostCtx.withNightMode(dark), frame)
-            frame.addView(hostView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            // hostScale < 1 mimics One UI, which lays a widget out at a larger size and shrinks it.
+            val density = ctx.resources.displayMetrics.density
+            frame.addView(hostView, FrameLayout.LayoutParams((size.width.value * density).toInt(), (size.height.value * density).toInt()))
+            hostView.pivotX = 0f
+            hostView.pivotY = 0f
+            hostView.scaleX = hostScale
+            hostView.scaleY = hostScale
         }
     }
 }

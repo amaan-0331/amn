@@ -1,17 +1,35 @@
-# amn
+# AMN
 
-AMN: personal toolbox app
+A personal toolbox app. Flutter for the app and its tools; the home-screen
+widgets are native Android (Jetpack Glance) in their own package.
 
-## Getting Started
+```
+lib/                      Flutter app shell and in-app tools
+packages/amn_widgets/     Home-screen widgets (Flutter plugin)
+  lib/                    Edit pages, live preview, amn/widgets bridge
+  android/…/widgets/
+    core/                 Pure Kotlin: conditions, summary rules, palettes, offsets
+    data/                 Settings, storage, forecast (Open-Meteo: to do)
+    glance/               Weather and clock widgets
+    config/               Edit-page activity and preview platform view
+```
 
-This project is a starting point for a Flutter application.
+Kotlin computes, Flutter displays: everything a widget needs runs natively, so
+refreshes work while the app is closed. Flutter owns every screen.
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```
+flutter run
+cd android && ./gradlew :amn_widgets:testDebugUnitTest   # widget logic tests
+flutter test && (cd packages/amn_widgets && flutter test)
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Android only for now (minSdk 34).
+
+## Credits
+
+- Weather icons: [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) © Microsoft, MIT License
+  (see `packages/amn_widgets/third_party/fluent-emoji/LICENSE`). Night partly-cloudy and fog are
+  composites of those images.
+- Weather data (planned): [Open-Meteo](https://open-meteo.com), CC BY 4.0.

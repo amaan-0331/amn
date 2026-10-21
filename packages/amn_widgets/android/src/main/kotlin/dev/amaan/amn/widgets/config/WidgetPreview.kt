@@ -68,6 +68,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
                 hour = (it["hour"] as? Number)?.toInt() ?: 12,
                 h24 = it["h24"] as? Boolean,
                 seed = (it["seed"] as? Number)?.toLong(),
+                refresh = it["refresh"] as? String,
             )
         }
         val dark = lab?.get("dark") as? Boolean

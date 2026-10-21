@@ -144,7 +144,10 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     } else {
         ClockTimeline.phaseAt(now, zone, s.sun())
     }
-    val pal = Palettes.of(Condition.CLEAR, phase, context.isNightMode())
+    // With weather, the clock takes the weather widget's look: condition art and condition colors.
+    // Without it (switched off, or not fetched yet) it falls back to the sky for the time of day.
+    val sky = weather?.condition ?: Condition.CLEAR
+    val pal = Palettes.of(sky, phase, context.isNightMode())
     val ink = ColorProvider(Color(pal.ink))
     val offset = CityOffset.between(zone, ZoneId.systemDefault(), now).label
 
@@ -165,7 +168,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     val designTime = when (layout) {
         ClockLayout.TINY -> 23f
         ClockLayout.SQUARE -> 52f
-        ClockLayout.SMALL -> 36f
+        ClockLayout.SMALL -> 32f
     }
     val available = (layout.w - 24f) * fit.k
     val timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
@@ -177,8 +180,8 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     val phaseLabel = when (phase) {
         Phase.DAWN -> "Dawn"; Phase.DAY -> "Day"; Phase.DUSK -> "Dusk"; Phase.NIGHT -> "Night"
     }
-    // By day the sun sits high in the corner; at dawn and dusk it sits half below the bottom edge.
-    val low = phase == Phase.DAWN || phase == Phase.DUSK
+    // A clear sky at dawn or dusk keeps the sun half below the bottom edge; everything else sits in the corner.
+    val low = (phase == Phase.DAWN || phase == Phase.DUSK) && sky == Condition.CLEAR
     fun style(sp: Float, weight: FontWeight) = TextStyle(color = ink, fontSize = fit.sp(sp).sp, fontWeight = weight)
 
     Box(
@@ -191,6 +194,10 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         if (low) {
             val sun = Horizon.topHalf(context, Art.drawable(Condition.CLEAR, phase))
             Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8f).dp).height((artSize * .8f * .55f).dp))
+        } else if (weather != null) {
+            // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
+            val z = artSize * .8f
+            BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
         } else {
             // Runs off the top-right corner by a fifth, as in the design.
             BleedArt(Art.drawable(Condition.CLEAR, phase), artSize, bleedRight = artSize * .2f, bleedTop = artSize * .2f)
@@ -201,7 +208,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
             if (square) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(phaseLabel, style = style(11.5f, FontWeight.Medium))
-                    if (weather != null) WeatherBit(weather, units, phase, fit, ::style, 11.5f)
+                    if (weather != null) WeatherBit(weather, units, ::style, 11.5f)
                 }
             }
             Spacer(GlanceModifier.defaultWeight())
@@ -227,19 +234,17 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
                     // 2×1 has no line under the city, so its weather sits next to the offset.
-                    if (!square && weather != null) WeatherBit(weather, units, phase, fit, ::style, 10.5f)
+                    if (!square && weather != null) WeatherBit(weather, units, ::style, 10.5f)
                 }
             }
         }
     }
 }
 
-/** " · [icon] 13°": the city's current condition and temperature, after another label. */
+/** " · 13°": the city's temperature after another label. The art already shows the condition. */
 @Composable
-private fun WeatherBit(f: Forecast, units: Units, phase: Phase, fit: Fit, style: (Float, FontWeight) -> TextStyle, sp: Float) {
-    Text(" · ", style = style(sp, FontWeight.Medium))
-    Image(ImageProvider(Art.drawable(f.condition, phase)), null, GlanceModifier.size(fit.dp(sp + 3f)))
-    Text(" ${units.temp(f.nowTempC)}°", style = style(sp, FontWeight.Bold), maxLines = 1)
+private fun WeatherBit(f: Forecast, units: Units, style: (Float, FontWeight) -> TextStyle, sp: Float) {
+    Text(" · ${units.temp(f.nowTempC)}°", style = style(sp, FontWeight.Bold), maxLines = 1)
 }
 
 /** "NY" for New York, "TOK" for Tokyo: initials for several words, else the first three letters. */

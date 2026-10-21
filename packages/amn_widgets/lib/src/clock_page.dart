@@ -152,7 +152,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
               title: const Text('Show weather'),
               subtitle: Text(_showWeather && _weatherAt != null
                   ? '${updatedLabel(_weatherAt)} · updates every hour · Open-Meteo'
-                  : "The city's condition and temperature · updates every hour"),
+                  : "The city's weather art, colors and temperature · updates every hour"),
               value: _showWeather,
               onChanged: (v) => setState(() => _showWeather = v),
             ),

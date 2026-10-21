@@ -61,10 +61,19 @@ object WeatherRefresher {
             }.onFailure { Log.w(TAG, "Weather refresh failed for $id", it) }
         }
         WeatherWidget().redrawAll(context)
+        if (done.isNotEmpty()) WeatherSchedule.redrawAfterJustNow(context)
         return done
     }
 
     suspend fun refreshAll(context: Context) = refresh(context, weatherWidgetIds(context))
+}
+
+/** Redraws weather widgets once, so a "Just now" label ages into "2 min ago". */
+class WeatherRedrawWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        WeatherWidget().redrawAll(applicationContext)
+        return Result.success()
+    }
 }
 
 class WeatherRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -93,6 +102,16 @@ object WeatherSchedule {
             NOW,
             ExistingWorkPolicy.REPLACE,
             OneTimeWorkRequestBuilder<WeatherRefreshWorker>().setConstraints(network).build(),
+        )
+    }
+
+    fun redrawAfterJustNow(context: Context) {
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "amn-weather-redraw",
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<WeatherRedrawWorker>()
+                .setInitialDelay(WeatherWidget.JUST_NOW_MS + 5_000, TimeUnit.MILLISECONDS)
+                .build(),
         )
     }
 

@@ -39,6 +39,8 @@ data class Explanation(
  * seed every two hours, so the line varies through the day without flickering between redraws.
  *
  * Only phrasings up to [maxLen] characters are used, so each widget size gets a line that fits.
+ * Every urgent rule has a phrasing of 16 characters or less (the 2×2 limit), so a small widget
+ * never skips an urgent rule just because its phrasings are too long.
  * Temperatures in the text go through [deg], so they follow the unit setting.
  */
 object Summary {
@@ -145,14 +147,14 @@ object Summary {
                     val e = c.firstFrom(1) { c.h[it].condition != Condition.STORM }
                     if (e > 0 && c.today(e)) {
                         val t = c.at(c.h[e].hour)
-                        Cand("storm", listOf("Storms until $t", "Stormy till $t", "Thunder until $t"))
+                        Cand("storm", listOf("Storms until $t", "Stormy till $t", "Thunder until $t", "Storm till $t"))
                     } else {
                         Cand("storm", listOf("Storms tonight", "Stormy night ahead", "Thunder tonight"))
                     }
                 }
                 else -> {
                     val t = c.at(c.h[i].hour)
-                    Cand("storm", listOf("Storms from $t", "Thunder by $t", "Storms roll in at $t"))
+                    Cand("storm", listOf("Storms from $t", "Thunder by $t", "Storms roll in at $t", "Storms at $t"))
                 }
             }
         },
@@ -174,8 +176,8 @@ object Summary {
                 when {
                     c.now < 15 && snow -> Cand("wet-all-day", listOf("Snow all day", "Snow day", "Snow keeps coming"))
                     c.now < 15 -> Cand("wet-all-day", listOf("Rain all day", "Umbrella day", "A wet one today"))
-                    snow -> Cand("wet-all-day", listOf("Snow into tonight", "Snowy night ahead"))
-                    else -> Cand("wet-all-day", listOf("Rain into tonight", "Wet evening ahead", "Rain on into the night"))
+                    snow -> Cand("wet-all-day", listOf("Snow into tonight", "Snowy night ahead", "Snow all night"))
+                    else -> Cand("wet-all-day", listOf("Rain into tonight", "Wet evening ahead", "Rain on into the night", "Rain all night"))
                 }
             }
         },

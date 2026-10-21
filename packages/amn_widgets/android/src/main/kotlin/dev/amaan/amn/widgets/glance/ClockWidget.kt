@@ -59,12 +59,15 @@ class ClockWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }
             .getOrDefault(AppWidgetManager.INVALID_APPWIDGET_ID)
-        val stored = WidgetStore(context).clock(appWidgetId)
-        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && stored.timeZone != null) {
-            ClockSchedule.scheduleNext(context, appWidgetId, stored)
+        val store = WidgetStore(context)
+        val initial = store.clock(appWidgetId)
+        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && initial.timeZone != null) {
+            ClockSchedule.scheduleNext(context, appWidgetId, initial)
         }
         provideContent {
-            val settings = LocalState.current as? ClockSettings ?: stored
+            val glanceState = LocalState.current
+            glanceState.renderVersion()
+            val settings = glanceState as? ClockSettings ?: store.clock(appWidgetId)
             ClockContent(settings, appWidgetId)
         }
     }

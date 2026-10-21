@@ -3,11 +3,11 @@ package dev.amaan.amn.widgets
 import android.app.Activity
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.updateAll
 import dev.amaan.amn.widgets.config.PREVIEW_VIEW_TYPE
 import dev.amaan.amn.widgets.config.PreviewViewFactory
 import dev.amaan.amn.widgets.config.WidgetConfigActivity
 import dev.amaan.amn.widgets.core.CityOffset
+import dev.amaan.amn.widgets.data.ClockSchedule
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.ForecastCache
 import dev.amaan.amn.widgets.data.WeatherRefresher
@@ -17,6 +17,8 @@ import dev.amaan.amn.widgets.data.WeatherSettings
 import dev.amaan.amn.widgets.data.WidgetStore
 import dev.amaan.amn.widgets.glance.ClockWidget
 import dev.amaan.amn.widgets.glance.WeatherWidget
+import dev.amaan.amn.widgets.glance.redraw
+import dev.amaan.amn.widgets.glance.redrawAll
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -88,13 +90,15 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                 scope.launch {
                     val glanceId = runCatching { GlanceAppWidgetManager(appContext).getGlanceIdBy(id) }.getOrNull()
                     if (kind == "clock") {
-                        store.saveClock(id, ClockSettings.from(settings, store.clock(id)))
-                        glanceId?.let { ClockWidget().update(appContext, it) }
+                        val clock = ClockSettings.from(settings, store.clock(id))
+                        store.saveClock(id, clock)
+                        glanceId?.let { ClockWidget().redraw(appContext, it) }
+                        if (clock.timeZone != null) ClockSchedule.scheduleNext(appContext, id, clock)
                     } else {
                         store.saveWeather(id, WeatherSettings.from(settings, store.weather(id)))
                         store.saveUnits(Units.from(settings, store.units()))
                         // Units are app-wide, so every weather widget changes.
-                        WeatherWidget().updateAll(appContext)
+                        WeatherWidget().redrawAll(appContext)
                         WeatherSchedule.ensure(appContext)
                         WeatherSchedule.now(appContext)
                     }

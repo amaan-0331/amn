@@ -79,11 +79,14 @@ class WeatherWidget : GlanceAppWidget() {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }
             .getOrDefault(AppWidgetManager.INVALID_APPWIDGET_ID)
         val store = WidgetStore(context)
-        val stored = WeatherState(store.weather(appWidgetId), store.units())
         provideContent {
+            val glanceState = LocalState.current
             // The edit page's preview passes unsaved settings as state.
-            val state = LocalState.current as? WeatherState ?: stored
-            WeatherContent(state, state.previewWidgetId ?: appWidgetId, isPreview = state !== stored)
+            val preview = glanceState as? WeatherState
+            // Reading the render version makes redraw() recompose this with fresh settings and forecast.
+            glanceState.renderVersion()
+            val state = preview ?: WeatherState(store.weather(appWidgetId), store.units())
+            WeatherContent(state, preview?.previewWidgetId ?: appWidgetId, isPreview = preview != null)
         }
     }
 }

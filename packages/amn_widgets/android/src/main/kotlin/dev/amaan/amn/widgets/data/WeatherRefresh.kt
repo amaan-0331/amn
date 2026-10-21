@@ -3,7 +3,6 @@ package dev.amaan.amn.widgets.data
 import android.content.Context
 import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -14,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dev.amaan.amn.widgets.glance.WeatherWidget
+import dev.amaan.amn.widgets.glance.redrawAll
 import java.util.concurrent.TimeUnit
 
 /** Fetches and caches the forecast for weather widgets, then redraws them. */
@@ -60,7 +60,7 @@ object WeatherRefresher {
                 done += id
             }.onFailure { Log.w(TAG, "Weather refresh failed for $id", it) }
         }
-        WeatherWidget().updateAll(context)
+        WeatherWidget().redrawAll(context)
         return done
     }
 

@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -16,6 +15,8 @@ import dev.amaan.amn.widgets.core.SunDay
 import dev.amaan.amn.widgets.core.SunTimes
 import dev.amaan.amn.widgets.glance.ClockWidget
 import dev.amaan.amn.widgets.glance.WeatherWidget
+import dev.amaan.amn.widgets.glance.redraw
+import dev.amaan.amn.widgets.glance.redrawAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,8 +60,10 @@ object ClockSchedule {
         override suspend fun doWork(): Result {
             val id = inputData.getInt(KEY_ID, -1)
             val glanceId = runCatching { GlanceAppWidgetManager(applicationContext).getGlanceIdBy(id) }.getOrNull()
-            // Rendering schedules the next update.
-            if (glanceId != null) ClockWidget().update(applicationContext, glanceId)
+            if (glanceId != null) {
+                ClockWidget().redraw(applicationContext, glanceId)
+                scheduleNext(applicationContext, id, WidgetStore(applicationContext).clock(id))
+            }
             return Result.success()
         }
     }
@@ -71,8 +74,8 @@ class TimeChangeReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                ClockWidget().updateAll(context)
-                WeatherWidget().updateAll(context)
+                ClockWidget().redrawAll(context)
+                WeatherWidget().redrawAll(context)
             } finally {
                 pending.finish()
             }

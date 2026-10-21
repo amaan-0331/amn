@@ -1,3 +1,4 @@
+import 'package:amn_ui/amn_ui.dart';
 import 'package:flutter/material.dart';
 
 import 'clock_page.dart';
@@ -19,5 +20,6 @@ Route<void>? widgetConfigRoute(RouteSettings settings) {
     _ => null,
   };
   if (page == null) return null;
-  return MaterialPageRoute<void>(settings: settings, builder: (_) => page);
+  // Pages with a purpose: the sky mutes while they're open.
+  return MaterialPageRoute<void>(settings: settings, builder: (_) => DriftMute(child: page));
 }

@@ -24,7 +24,7 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
     edge: Color(0x8CFFFFFF),
     highlight: Color(0xB3FFFFFF),
     divider: Color(0x1A10131D),
-    grain: .16,
+    grain: .12,
   );
 
   static const dark = AmnGlass(
@@ -34,7 +34,7 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
     edge: Color(0x24FFFFFF),
     highlight: Color(0x2EFFFFFF),
     divider: Color(0x1AFFFFFF),
-    grain: .22,
+    grain: .16,
   );
 
   /// Blur 22 and saturation 150%, shared by every glass surface.

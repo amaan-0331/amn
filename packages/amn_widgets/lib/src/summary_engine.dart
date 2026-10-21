@@ -1,3 +1,5 @@
+import 'package:amn_ui/amn_ui.dart';
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 
 import 'bridge.dart';
@@ -79,30 +81,21 @@ class _SummaryEngineState extends State<SummaryEngine> {
     final vc = d?['variantCount'] as int? ?? 0;
     final vi = d?['variantIndex'] as int? ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
+    return Glass(
+      radius: 24,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primaryContainer.withValues(alpha: .55), scheme.surfaceContainerHigh],
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Text('SUMMARY ENGINE',
-                style: TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: .5)),
+            Text('SUMMARY ENGINE', style: AmnType.display(22, letterSpacing: .5)),
             const Spacer(),
-            IconButton.filledTonal(icon: const Icon(Icons.chevron_left), tooltip: 'Previous line', onPressed: () => widget.onSeed(seed - 1)),
+            IconButton.filledTonal(icon: const Icon(FluentIcons.chevron_left_24_regular), tooltip: 'Previous line', onPressed: () => widget.onSeed(seed - 1)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Text('seed $seed', style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()])),
             ),
-            IconButton.filledTonal(icon: const Icon(Icons.chevron_right), tooltip: 'Next line', onPressed: () => widget.onSeed(seed + 1)),
+            IconButton.filledTonal(icon: const Icon(FluentIcons.chevron_right_24_regular), tooltip: 'Next line', onPressed: () => widget.onSeed(seed + 1)),
           ]),
           const SizedBox(height: 6),
           // The result, animated as the seed changes.
@@ -115,7 +108,7 @@ class _SummaryEngineState extends State<SummaryEngine> {
             child: Text(
               d?['text'] as String? ?? '…',
               key: ValueKey(d?['text']),
-              style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 34, height: 1.1),
+              style: AmnType.display(34, height: 1.1),
             ),
           ),
           if (winner != null)
@@ -245,7 +238,7 @@ class _RuleRow extends StatelessWidget {
       ),
       child: Row(children: [
         Icon(
-          winner ? Icons.bolt : applies ? Icons.check_circle_outline : Icons.remove_circle_outline,
+          winner ? FluentIcons.flash_24_filled : applies ? FluentIcons.checkmark_circle_24_regular : FluentIcons.subtract_circle_24_regular,
           size: 18,
           color: winner ? scheme.primary : applies ? scheme.onSurface : scheme.outline,
         ),
@@ -306,7 +299,7 @@ class _PhraseRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(children: [
-        SizedBox(width: 22, child: chosen ? Icon(Icons.arrow_right_alt, size: 20, color: scheme.primary) : null),
+        SizedBox(width: 22, child: chosen ? Icon(FluentIcons.arrow_right_24_regular, size: 20, color: scheme.primary) : null),
         Expanded(
           child: Text(text,
               style: TextStyle(

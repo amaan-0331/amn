@@ -54,6 +54,20 @@ class WidgetBridge {
   static Future<Map<String, Object?>> explainSummary(Map<String, Object?> args) async =>
       await _channel.invokeMapMethod<String, Object?>('explainSummary', args) ?? {};
 
+  /// Every widget placed on the home screen, weather first.
+  static Future<PlacedWidgets> listWidgets() async {
+    final m = await _channel.invokeMapMethod<String, Object?>('listWidgets') ?? {};
+    return PlacedWidgets(
+      fahrenheit: m['fahrenheit'] as bool? ?? false,
+      widgets: [
+        for (final w in (m['widgets'] as List? ?? const []).cast<Map>()) PlacedWidget.from(w.cast<String, Object?>()),
+      ],
+    );
+  }
+
+  /// Opens a placed widget's edit page over the app.
+  static Future<void> openEditor(PlacedWidget w) => _channel.invokeMethod('openEditor', {'id': w.id, 'kind': w.kind});
+
   /// Closes the page without saving. When adding, the widget isn't added.
   static Future<void> cancel() => _channel.invokeMethod('cancel');
 }
@@ -67,4 +81,58 @@ class ZoneInfo {
   final String time;
   final String offset;
   final String gmt;
+}
+
+class PlacedWidgets {
+  const PlacedWidgets({required this.widgets, required this.fahrenheit});
+
+  final List<PlacedWidget> widgets;
+  final bool fahrenheit;
+}
+
+/// A widget on the home screen and what it shows right now.
+class PlacedWidget {
+  const PlacedWidget({
+    required this.id,
+    required this.kind,
+    this.place,
+    this.gps = false,
+    this.timeZone,
+    this.tempC,
+    this.condition,
+    this.night = false,
+    this.fetchedAt,
+  });
+
+  factory PlacedWidget.from(Map<String, Object?> m) => PlacedWidget(
+        id: m['id']! as int,
+        kind: m['kind']! as String,
+        place: m['place'] as String?,
+        gps: m['gps'] as bool? ?? false,
+        timeZone: m['timeZone'] as String?,
+        tempC: (m['tempC'] as num?)?.toDouble(),
+        condition: m['condition'] as String?,
+        night: m['night'] as bool? ?? false,
+        fetchedAt: m['fetchedAt'] as int?,
+      );
+
+  final int id;
+  final String kind; // 'weather' | 'clock'
+  final String? place;
+  final bool gps;
+  final String? timeZone;
+  final double? tempC;
+
+  /// clear, partly, cloudy, rain, storm, snow or fog; null when not known.
+  final String? condition;
+
+  /// Whether it's night where the widget is (weather widgets only).
+  final bool night;
+  final int? fetchedAt;
+
+  String? temperature({required bool fahrenheit}) {
+    final c = tempC;
+    if (c == null) return null;
+    return '${(fahrenheit ? c * 9 / 5 + 32 : c).round()}°';
+  }
 }

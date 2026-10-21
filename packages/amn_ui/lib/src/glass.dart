@@ -89,7 +89,7 @@ class _GlassPainter extends CustomPainter {
 /// A tile of grey noise, made once at startup. Shown at [tile] logical px.
 abstract final class Grain {
   static const size = 96;
-  static const tile = 160.0;
+  static const tile = 72.0;
   static ui.Image? image;
 
   static Future<void> load() async {

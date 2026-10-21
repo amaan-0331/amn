@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed icon: the three Drift orbs as overlapping translucent discs. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.55"
+        android:pathData="M43.92,46.8m-19.48,0a19.48,19.48 0,1 1,38.96 0a19.48,19.48 0,1 1,-38.96 0" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.55"
+        android:pathData="M64.08,61.2m-19.48,0a19.48,19.48 0,1 1,38.96 0a19.48,19.48 0,1 1,-38.96 0" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.55"
+        android:pathData="M63.36,41.76m-11.81,0a11.81,11.81 0,1 1,23.62 0a11.81,11.81 0,1 1,-23.62 0" />
+</vector>

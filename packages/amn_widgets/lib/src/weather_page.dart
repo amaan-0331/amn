@@ -1,3 +1,5 @@
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:amn_ui/amn_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -124,18 +126,18 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> with WidgetsBindi
     final allowButton = TextButton(onPressed: _requestAccess, child: const Text('Allow'));
     final tile = switch (_access) {
       _Access.always => ListTile(
-          leading: const Icon(Icons.near_me),
+          leading: const Icon(FluentIcons.location_24_filled),
           title: Text(_placeName ?? 'Current location'),
           subtitle: const Text('Found by GPS · approximate location, allowed all the time'),
         ),
       _Access.whileInUse => ListTile(
-          leading: const Icon(Icons.near_me_outlined),
+          leading: const Icon(FluentIcons.location_24_regular),
           title: const Text('Allow location all the time'),
           subtitle: const Text('Refreshes run in the background, so AMN needs “Allow all the time”. Until then the widget uses your pinned city.'),
           trailing: allowButton,
         ),
       _ => ListTile(
-          leading: const Icon(Icons.location_disabled),
+          leading: const Icon(FluentIcons.location_off_24_regular),
           title: const Text('Location is off for AMN'),
           subtitle: const Text('Allow approximate location, or choose a city instead.'),
           trailing: allowButton,
@@ -148,6 +150,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> with WidgetsBindi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: const GlassBar(),
         leading: CloseButtonFor(adding: widget.adding),
         title: PageTitle(widget.adding ? 'Add weather widget' : 'Weather widget'),
       ),

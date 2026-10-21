@@ -59,6 +59,7 @@ class DriftController extends ChangeNotifier {
     _brightness = b;
     _compute();
     _publish(force: true);
+    notifyListeners();
     _paint();
   }
 

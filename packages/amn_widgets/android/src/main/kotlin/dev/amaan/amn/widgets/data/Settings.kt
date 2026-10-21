@@ -63,4 +63,9 @@ data class Units(val fahrenheit: Boolean = false, val inches: Boolean = false) {
 }
 
 /** What a weather widget renders: its settings plus the app-wide units. Also the preview state. */
-data class WeatherState(val settings: WeatherSettings, val units: Units)
+data class WeatherState(
+    val settings: WeatherSettings,
+    val units: Units,
+    /** Set by the edit page's preview, which renders with a fake id but should show this widget's cached weather. */
+    val previewWidgetId: Int? = null,
+)

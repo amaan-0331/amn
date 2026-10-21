@@ -55,6 +55,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
         val kind = args["kind"] as? String ?: "weather"
         val size = DpSize(((args["width"] as? Number)?.toFloat() ?: 140f).dp, ((args["height"] as? Number)?.toFloat() ?: 140f).dp)
         val settings = args["settings"] as? Map<*, *> ?: emptyMap<String, Any>()
+        val widgetId = (args["widgetId"] as? Number)?.toInt()
         job?.cancel()
         job = scope.launch {
             val ctx = frame.context
@@ -62,7 +63,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
                 if (kind == "clock") {
                     ClockWidget().compose(ctx, size = size, state = ClockSettings.from(settings))
                 } else {
-                    WeatherWidget().compose(ctx, size = size, state = WeatherState(WeatherSettings.from(settings), Units.from(settings)))
+                    WeatherWidget().compose(ctx, size = size, state = WeatherState(WeatherSettings.from(settings), Units.from(settings), previewWidgetId = widgetId))
                 }
             }.onFailure { Log.w("AmnWidgets", "Preview failed", it) }.getOrNull() ?: return@launch
             frame.removeAllViews()

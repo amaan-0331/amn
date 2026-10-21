@@ -7,7 +7,11 @@ import androidx.glance.appwidget.updateAll
 import dev.amaan.amn.widgets.config.PREVIEW_VIEW_TYPE
 import dev.amaan.amn.widgets.config.PreviewViewFactory
 import dev.amaan.amn.widgets.config.WidgetConfigActivity
+import dev.amaan.amn.widgets.core.CityOffset
 import dev.amaan.amn.widgets.data.ClockSettings
+import dev.amaan.amn.widgets.data.ForecastCache
+import dev.amaan.amn.widgets.data.WeatherRefresher
+import dev.amaan.amn.widgets.data.WeatherSchedule
 import dev.amaan.amn.widgets.data.Units
 import dev.amaan.amn.widgets.data.WeatherSettings
 import dev.amaan.amn.widgets.data.WidgetStore
@@ -23,6 +27,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /** The amn/widgets channel and the preview platform view. See the spec's Architecture section. */
 class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
@@ -58,7 +66,12 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
 
             "getSettings" -> {
                 val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
-                val settings = if (call.argument<String>("kind") == "clock") store.clock(id).toMap() else store.weather(id).toMap()
+                val settings = if (call.argument<String>("kind") == "clock") {
+                    store.clock(id).toMap()
+                } else {
+                    val cache = ForecastCache(appContext)
+                    store.weather(id).toMap() + mapOf("fetchedAt" to cache.fetchedAt(id), "placeName" to cache.placeName(id))
+                }
                 result.success(settings + store.units().toMap())
             }
 
@@ -82,6 +95,8 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                         store.saveUnits(Units.from(settings, store.units()))
                         // Units are app-wide, so every weather widget changes.
                         WeatherWidget().updateAll(appContext)
+                        WeatherSchedule.ensure(appContext)
+                        WeatherSchedule.now(appContext)
                     }
                     result.success(null)
                     configActivity?.finishWith(true)
@@ -93,8 +108,29 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                 configActivity?.finishWith(false)
             }
 
-            // TODO: run the Open-Meteo refresh job once and return the new fetch time.
-            "refreshNow" -> result.success(System.currentTimeMillis())
+            "refreshNow" -> {
+                val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
+                scope.launch {
+                    WeatherRefresher.refresh(appContext, listOf(id))
+                    val cache = ForecastCache(appContext)
+                    result.success(mapOf("fetchedAt" to cache.fetchedAt(id), "placeName" to cache.placeName(id)))
+                }
+            }
+
+            // Current time, offset from the phone and GMT label for each IANA zone (clock search results).
+            "describeZones" -> {
+                val zones = call.argument<List<String>>("zones").orEmpty()
+                val h24 = call.argument<Boolean>("h24") ?: true
+                val fmt = DateTimeFormatter.ofPattern(if (h24) "HH:mm" else "h:mm a", Locale.ENGLISH)
+                val now = Instant.now()
+                val phone = ZoneId.systemDefault()
+                result.success(zones.associateWith { z ->
+                    val zone = runCatching { ZoneId.of(z) }.getOrNull() ?: return@associateWith null
+                    val off = zone.rules.getOffset(now).totalSeconds / 60
+                    val gmt = "GMT${if (off >= 0) "+" else "−"}${kotlin.math.abs(off) / 60}${if (off % 60 != 0) ":%02d".format(kotlin.math.abs(off) % 60) else ""}"
+                    mapOf("time" to now.atZone(zone).format(fmt), "offset" to CityOffset.between(zone, phone, now).label, "gmt" to gmt)
+                })
+            }
 
             else -> result.notImplemented()
         }

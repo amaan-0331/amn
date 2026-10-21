@@ -35,15 +35,17 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import dev.amaan.amn.widgets.core.CityOffset
+import dev.amaan.amn.widgets.core.ClockTimeline
 import dev.amaan.amn.widgets.core.Condition
 import dev.amaan.amn.widgets.core.Palettes
 import dev.amaan.amn.widgets.core.Phase
-import dev.amaan.amn.widgets.core.TimeOfDay
+import dev.amaan.amn.widgets.data.ClockSchedule
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.WidgetStore
+import dev.amaan.amn.widgets.data.sun
+import dev.amaan.amn.widgets.data.zoneOrPhone
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 class ClockWidget : GlanceAppWidget() {
     companion object {
@@ -58,6 +60,9 @@ class ClockWidget : GlanceAppWidget() {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }
             .getOrDefault(AppWidgetManager.INVALID_APPWIDGET_ID)
         val stored = WidgetStore(context).clock(appWidgetId)
+        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && stored.timeZone != null) {
+            ClockSchedule.scheduleNext(context, appWidgetId, stored)
+        }
         provideContent {
             val settings = LocalState.current as? ClockSettings ?: stored
             ClockContent(settings, appWidgetId)
@@ -71,24 +76,23 @@ class ClockWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
         val store = WidgetStore(context)
-        appWidgetIds.forEach(store::remove)
+        appWidgetIds.forEach {
+            store.remove(it)
+            ClockSchedule.cancel(context, it)
+        }
     }
 }
 
-/**
- * TODO: re-render at the next phase change and at midnight in either zone
- * (WorkManager), and use real sunrise/sunset from the city's coordinates.
- */
 @Composable
 private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
     val context = LocalContext.current
     val size = LocalSize.current
-    val zone = s.timeZone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
-    val cityNow = ZonedDateTime.now(zone)
-    val phase = TimeOfDay.phaseForHour(cityNow.hour, cityNow.minute)
+    val zone = s.zoneOrPhone()
+    val now = Instant.now()
+    val phase = ClockTimeline.phaseAt(now, zone, s.sun())
     val pal = Palettes.of(Condition.CLEAR, phase, context.isNightMode())
     val ink = ColorProvider(Color(pal.ink))
-    val offset = CityOffset.between(zone, ZoneId.systemDefault(), Instant.now()).label
+    val offset = CityOffset.between(zone, ZoneId.systemDefault(), now).label
 
     val tiny = size.width < ClockWidget.SMALL.width
     val square = size.height >= ClockWidget.SQUARE.height
@@ -101,27 +105,29 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
         if (!s.h24 && !tiny) append(" a")
     }
     val timeSize = when {
-        tiny -> 26f
-        square -> 50f
-        else -> 36f
+        tiny -> 28f
+        square -> 54f
+        else -> 38f
     }
     val artSize = when {
-        tiny -> 40.dp
-        square -> 84.dp
-        else -> 60.dp
+        tiny -> 44
+        square -> 96
+        else -> 64
     }
     val phaseLabel = when (phase) {
         Phase.DAWN -> "Dawn"; Phase.DAY -> "Day"; Phase.DUSK -> "Dusk"; Phase.NIGHT -> "Night"
     }
+    // By day the sun sits high in the corner; at dawn and dusk it sits half below the bottom edge.
+    val low = phase == Phase.DAWN || phase == Phase.DUSK
 
     Box(
         modifier = GlanceModifier.fillMaxSize()
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
             .background(ImageProvider(Backgrounds.gradient(pal)), ContentScale.FillBounds)
             .clickable(openEditPage(context, appWidgetId, "clock")),
-        contentAlignment = Alignment.TopEnd,
+        contentAlignment = if (low) Alignment.BottomEnd else Alignment.TopEnd,
     ) {
-        Image(ImageProvider(Art.drawable(Condition.CLEAR, phase)), contentDescription = null, modifier = GlanceModifier.size(artSize))
+        Image(ImageProvider(Art.drawable(Condition.CLEAR, phase)), contentDescription = null, modifier = GlanceModifier.size((artSize * if (low) .7 else 1.0).dp))
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp)) {
             val title = s.cityName ?: "Choose a city"
             Text(
@@ -132,7 +138,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int) {
             if (square) Text(phaseLabel, style = TextStyle(color = ink, fontSize = 11.5.sp, fontWeight = FontWeight.Medium))
             Spacer(GlanceModifier.defaultWeight())
             ClockText(zone.id, pattern, timeSize, pal.ink)
-            if (!tiny) Text(offset, style = TextStyle(color = ink, fontSize = 10.5.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+            if (!tiny) Text(offset, style = TextStyle(color = ink, fontSize = 11.sp, fontWeight = FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(top = 2.dp))
         }
     }
 }

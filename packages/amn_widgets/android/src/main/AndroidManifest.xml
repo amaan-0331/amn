@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Weather "Current location". Refreshes run in the background, so they need "Allow all the time". -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application>
         <!-- Edit page for both widgets. Opened by the launcher when a widget is added,
@@ -41,6 +45,15 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/amn_clock_widget_info" />
+        </receiver>
+        <!-- Redraws both widgets when the phone's time or time zone changes. -->
+        <receiver
+            android:name="dev.amaan.amn.widgets.data.TimeChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
         </receiver>
     </application>
 </manifest>

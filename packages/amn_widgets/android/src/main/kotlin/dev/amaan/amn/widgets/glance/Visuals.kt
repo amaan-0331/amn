@@ -86,3 +86,15 @@ internal fun ClockText(zone: String?, pattern: String, sizeSp: Float, color: Int
     AndroidRemoteViews(rv, modifier)
 }
 
+/** Static text in Barlow Condensed (temperatures). */
+@Composable
+internal fun DisplayText(text: String, sizeSp: Float, color: Int, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val rv = RemoteViews(context.packageName, R.layout.amn_display_text).apply {
+        setTextViewText(R.id.amn_display, text)
+        setTextColor(R.id.amn_display, color)
+        setTextViewTextSize(R.id.amn_display, TypedValue.COMPLEX_UNIT_SP, sizeSp)
+    }
+    AndroidRemoteViews(rv, modifier)
+}
+

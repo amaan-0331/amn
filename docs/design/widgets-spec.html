@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>AMN Widgets</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,6 +97,19 @@ select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);
 .w .day .dp{font-size:.88em;font-weight:750}
 .w .bar{position:relative;height:calc(var(--u)*5);border-radius:99px;background:color-mix(in srgb,var(--ink-w) 18%,transparent)}
 .w .bar i{position:absolute;top:0;bottom:0;border-radius:99px;background:var(--ink-w)}
+.w .rfb{display:inline-grid;place-items:center;width:1.7em;height:1.7em;margin-left:.4em;border-radius:99px;background:color-mix(in srgb,var(--ink-w) 16%,transparent);flex:none}
+.w .rfb .ico{width:1.1em;height:1.1em}
+.w .rf{display:inline-flex;align-items:center;gap:.35em;padding:.3em .75em;border-radius:99px;background:color-mix(in srgb,var(--ink-w) 16%,transparent);font-weight:700;font-size:calc(var(--u)*10.5);white-space:nowrap}
+.w .rf .ico{width:1.15em;height:1.15em}
+.w .busy{opacity:.55}
+.w .wxi{display:inline-block;vertical-align:-.25em}
+.props{display:grid;gap:28px}
+.prop{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px}
+.prop h3{font-size:26px}
+.prop .phone{border-radius:22px}
+.prop ul{margin:0;padding-left:20px;display:grid;gap:6px;max-width:72ch}
+.prop .rec{background:var(--accent-soft);border-radius:14px;padding:12px 14px;max-width:72ch}
+.prop .rec b{color:var(--accent)}
 .w .upd{font-size:calc(var(--u)*10);font-weight:500;display:flex;align-items:center;gap:calc(var(--u)*3);white-space:nowrap}
 .w .prow{display:flex;align-items:center;gap:calc(var(--u)*4);font-weight:600}
 
@@ -296,10 +310,46 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
     </div>
   </section>
 
+  <section class="edit props" id="proposals" aria-labelledby="propH">
+    <div class="edit-head">
+      <h2 id="propH">Proposals</h2>
+      <p>Two ideas to decide on before building. The mockups follow the controls at the top of the page: condition, time of day, theme, units and 12/24h.</p>
+    </div>
+
+    <div class="prop">
+      <h3>1 · Refresh button on the weather widget</h3>
+      <p>A small round button placed where each size has free space. The art owns the top-right corner, so:</p>
+      <ul>
+        <li><b>4×2:</b> right after the time in the header.</li>
+        <li><b>4×3 and 4×4:</b> merged with the "Updated" label into one chip, top right.</li>
+        <li><b>2×2:</b> bottom right, next to the summary chip.</li>
+        <li><b>2×1:</b> no button, since there's no room. Tapping opens the edit page, which has Refresh now.</li>
+      </ul>
+      <div class="phone" id="propRefresh"></div>
+      <ul>
+        <li><b>Tap:</b> refreshes this widget's location and forecast without opening the app. Tapping anywhere else still opens the edit page. The icon is 16 dp, but its tap area is padded to about 40 dp.</li>
+        <li><b>States:</b> widgets can't animate, so a tap switches the button to a dimmed "Updating…" until the new forecast arrives, then "Just now". With no connection it shows "Offline" for a few seconds and goes back.</li>
+        <li><b>Cost:</b> one Open-Meteo request per tap. Taps within two minutes of the last update are ignored.</li>
+      </ul>
+    </div>
+
+    <div class="prop">
+      <h3>2 · Clock with weather art</h3>
+      <p>Today the clock's art is the sun or moon for the city's time of day. Here it's replaced by the city's weather. Three cities, each in three versions:</p>
+      <div class="phone" id="propClock"></div>
+      <ul>
+        <li><b>A · Weather art, time-of-day colors:</b> the art tells the weather and the colors still tell the time, so a cloudy afternoon and a cloudy night look different. Clear and partly cloudy switch to their moon versions at night. The small weather icon in the text line is dropped, since the art already shows it. The line keeps just the temperature ("Night · 26°"). The art is drawn at 80%, because clouds and rain are taller than a plain sun and would otherwise reach the time.</li>
+        <li><b>B · Weather art, weather colors:</b> matches the weather widget exactly. That ties the two together, but the time of day then only shows in the "Night"/"Day" label. Next to a weather widget for the same city, it reads as a duplicate.</li>
+        <li><b>What's lost in both:</b> the sun on the horizon at dawn and dusk. It can stay for clear skies, as in A here.</li>
+      </ul>
+      <p class="rec"><b>Recommendation: A.</b> The clock gains the weather at a glance and keeps its own identity as a time-of-day widget.</p>
+    </div>
+  </section>
+
   <div class="spec">
     <nav class="toc" aria-label="Spec sections">
       <span class="t">Spec</span>
-      <a href="#brief">Brief</a><a href="#color">Color</a><a href="#type">Type</a><a href="#art">Illustration</a><a href="#sizes">Sizes</a><a href="#summary">Summary line</a><a href="#data">Data</a><a href="#behavior">Behavior</a><a href="#editspec">Edit pages</a><a href="#arch">Architecture</a><a href="#glance">Building in Glance</a><a href="#a11y">Accessibility</a><a href="#open">Open items</a>
+      <a href="#brief">Brief</a><a href="#color">Color</a><a href="#type">Type</a><a href="#art">Illustration</a><a href="#sizes">Sizes</a><a href="#summary">Summary line</a><a href="#data">Data</a><a href="#behavior">Behavior</a><a href="#editspec">Edit pages</a><a href="#proposals">Proposals</a><a href="#arch">Architecture</a><a href="#glance">Building in Glance</a><a href="#a11y">Accessibility</a><a href="#open">Open items</a>
     </nav>
     <main>
       <section class="sec" id="brief">
@@ -706,9 +756,16 @@ const locIcon=()=>S.loc==='gps'
 const warnIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z" fill="currentColor"/></svg>`;
 const dropIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2.5S5 10.2 5 14.5a7 7 0 0 0 14 0C19 10.2 12 2.5 12 2.5z" fill="currentColor"/></svg>`;
 const timeSpan=tz=>`<span class="tm"><span data-t="hm"${tz?` data-tz="${tz}"`:''}></span><span class="ap" data-t="ap"${tz?` data-tz="${tz}"`:''}></span></span>`;
-const meta=(fs,warn)=>`<div class="meta" style="font-size:${u(fs)}">${locIcon()}<b>${cityName()}</b><span aria-hidden="true">·</span>${timeSpan()}${warn&&S.stale?warnIcon():''}</div>`;
+const meta=(fs,warn,noButton)=>`<div class="meta" style="font-size:${u(fs)}">${locIcon()}<b>${cityName()}</b><span aria-hidden="true">·</span>${timeSpan()}${warn&&S.stale?warnIcon():''}${noButton?'':rfButton()}</div>`;
 const hilo=c=>`H ${T(c.fx.hi)}° · L ${T(c.fx.lo)}°`;
 const upd=()=>S.stale?`${warnIcon()}Updated 3 h ago`:'Updated 12 min ago';
+
+/* Proposals: refresh button. OPT.refresh is set only while the proposals section renders. */
+let OPT={refresh:null};
+const refreshIco=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/></svg>`;
+const RF_LABEL={idle:'12 min ago',busy:'Updating…',done:'Just now'};
+const rfButton=()=>OPT.refresh?`<span class="rfb${OPT.refresh==='busy'?' busy':''}">${refreshIco()}</span>`:'';
+const rfChip=()=>`<span class="rf${OPT.refresh==='busy'?' busy':''}">${refreshIco()}${RF_LABEL[OPT.refresh]}</span>`;
 
 function strip(c,n,pop,panel){
   let s='';
@@ -726,13 +783,13 @@ function daily(c){
 }
 const W={
   s21:c=>`<div class="art" style="right:${u(-10)};top:${u(-2)};width:${u(64)};height:${u(64)}">${art(c.cond,c.phase)}</div>
-    <div class="in" style="padding:${u(9)} ${u(12)};justify-content:space-between">${meta(10.5,true)}
+    <div class="in" style="padding:${u(9)} ${u(12)};justify-content:space-between">${meta(10.5,true,true)}
     <div class="num" style="font-size:${u(34)}">${T(c.now)}°</div>
     <div class="sum" style="font-size:${u(11.5)};max-width:${u(92)};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.sum.text}</div></div>`,
   s22:c=>`<div class="art" style="right:${u(-18)};top:${u(-14)};width:${u(96)};height:${u(96)}">${art(c.cond,c.phase)}</div>
-    <div class="in" style="padding:${u(12)};justify-content:space-between">${meta(11,true)}
+    <div class="in" style="padding:${u(12)};justify-content:space-between">${meta(11,true,true)}
     <div><div class="num" style="font-size:${u(60)}">${T(c.now)}°</div><div class="hilo" style="font-size:${u(11.5)};margin-top:${u(3)}">${hilo(c)}</div></div>
-    <div class="chip" style="font-size:${u(12)};padding:${u(5)} ${u(10)}">${c.sum.text}</div></div>`,
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:${u(6)};font-size:${u(12)}"><div class="chip" style="padding:${u(5)} ${u(10)}">${c.sum.text}</div>${rfButton()}</div></div>`,
   m42:c=>`<div class="art" style="right:${u(-6)};top:${u(-12)};width:${u(92)};height:${u(92)}">${art(c.cond,c.phase)}</div>
     <div class="in" style="padding:${u(11)} ${u(12)} ${u(8)};gap:${u(3)}">${meta(11,true)}
     <div style="display:flex;align-items:flex-end;gap:${u(10)}"><div class="num" style="font-size:${u(52)}">${T(c.now)}°</div>
@@ -740,7 +797,7 @@ const W={
     <div style="margin-top:auto">${strip(c,6,false,true)}</div></div>`,
   big:(c,withDays)=>`<div class="art" style="right:${u(-4)};top:${u(36)};width:${u(92)};height:${u(92)}">${art(c.cond,c.phase)}</div>
     <div class="in" style="padding:${u(13)} ${u(14)};gap:${u(4)}">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:${u(8)}">${meta(12,false)}<span class="upd">${upd()}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:${u(8)}">${meta(12,false,true)}${OPT.refresh?rfChip():`<span class="upd">${upd()}</span>`}</div>
     <div class="sum" style="font-size:${u(18)};max-width:${u(180)};margin-top:${u(2)}">${c.sum.text}</div>
     <div style="display:flex;align-items:flex-end;gap:${u(10)}"><div class="num" style="font-size:${u(68)}">${T(c.now)}°</div>
       <div style="display:grid;gap:${u(1)};font-size:${u(11.5)};padding-bottom:${u(3)}"><b style="font-weight:750">${LABEL[c.cond]}</b><span class="hilo">Feels ${T(c.now+c.fx.feelsD)}°</span><span class="hilo">${hilo(c)}</span></div></div>
@@ -754,17 +811,41 @@ function orbPos(phase,size){
   return (phase==='dawn'||phase==='dusk')?`right:${u(-size*.16)};bottom:${u(-size*.42)}`:`right:${u(-size*.2)};top:${u(-size*.2)}`;
 }
 const timeBig=(tz,fs,withSecs)=>`<div style="display:flex;align-items:baseline;gap:${u(3)}"><span class="num" style="font-size:${u(fs)}" data-t="hm" data-tz="${tz}"></span>${withSecs&&S.secs?`<span class="num" style="font-size:${u(fs*.4)}" data-t="s" data-tz="${tz}"></span>`:''}${S.h24?'':`<span style="font-size:${u(fs*.24)};font-weight:700" data-t="ap" data-tz="${tz}"></span>`}</div>`;
+/* Clock art: the sun or moon for the time of day, or (proposal) the city's weather. */
+function clockArt(k,size){
+  const low=k.phase==='dawn'||k.phase==='dusk';
+  // Weather art runs off the top-right corner; a clear sky at dawn or dusk keeps the horizon sun.
+  // Weather art is taller than a plain sun (clouds plus rain), so it's drawn at 80% and tucked into the corner.
+  if(k.artCond&&!(k.artCond==='clear'&&low)){const z=size*.8;
+    return `<div class="art" style="right:${u(-z*.14)};top:${u(-z*.2)};width:${u(z)};height:${u(z)}">${art(k.artCond,k.phase)}</div>`;}
+  return `<div class="art" style="${orbPos(k.phase,size)};width:${u(size)};height:${u(size)}">${art('clear',k.phase)}</div>`;
+}
+/* " · [icon] 26°": the city's weather after a label. With weather art the icon is dropped. */
+function wxBit(k,fs,withLabel){
+  if(!k.wx) return '';
+  const ico=k.artCond?'':`<span class="wxi" style="width:${u(fs+3)};height:${u(fs+3)}">${art(k.wx.cond,k.phase)}</span> `;
+  return ` · ${ico}${T(k.wx.temp)}°`;
+}
+/* Live time, or a fixed one for the proposal examples. */
+function clockTime(k,fs,withSecs){
+  if(!k.time) return timeBig(k.city[1],fs,withSecs);
+  return `<div style="display:flex;align-items:baseline;gap:${u(3)}"><span class="num" style="font-size:${u(fs)}">${S.h24?k.time.h24:k.time.h12}</span>${S.h24?'':`<span style="font-size:${u(fs*.24)};font-weight:700">${k.time.ap}</span>`}</div>`;
+}
+function clockStack(k){
+  if(!k.time) return `<div data-t="h" data-tz="${k.city[1]}"></div><div data-t="m" data-tz="${k.city[1]}"></div>`;
+  const [h,m]=(S.h24?k.time.h24:k.time.h12).split(':');return `<div>${h}</div><div>${m}</div>`;
+}
 const CK={
-  c11:k=>`<div class="art" style="${orbPos(k.phase,44)};width:${u(44)};height:${u(44)}">${art('clear',k.phase)}</div>
+  c11:k=>`${clockArt(k,44)}
     <div class="in" style="padding:${u(8)} ${u(9)};justify-content:space-between"><b style="font-size:${u(10)};font-weight:800;letter-spacing:.04em">${k.city[2]}</b>
-    <div class="num" style="font-size:${u(28)}"><div data-t="h" data-tz="${k.city[1]}"></div><div data-t="m" data-tz="${k.city[1]}"></div></div></div>`,
-  c21:k=>`<div class="art" style="${orbPos(k.phase,64)};width:${u(64)};height:${u(64)}">${art('clear',k.phase)}</div>
+    <div class="num" style="font-size:${u(28)}">${clockStack(k)}</div></div>`,
+  c21:k=>`${clockArt(k,64)}
     <div class="in" style="padding:${u(8)} ${u(12)};justify-content:space-between"><b style="font-size:${u(11.5)};font-weight:800">${k.city[0]}</b>
-    ${timeBig(k.city[1],36,true)}<span style="font-size:${u(10.5)};font-weight:600">${k.off.text}</span></div>`,
-  c22:k=>`<div class="art" style="${orbPos(k.phase,96)};width:${u(96)};height:${u(96)}">${art('clear',k.phase)}</div>
+    ${clockTime(k,36,true)}<span style="font-size:${u(10.5)};font-weight:600">${k.off.text}${wxBit(k,10.5,false)}</span></div>`,
+  c22:k=>`${clockArt(k,96)}
     <div class="in" style="padding:${u(12)} ${u(13)};justify-content:space-between">
-    <div style="display:grid;gap:${u(1)}"><b style="font-size:${u(15)};font-weight:800">${k.city[0]}</b><span style="font-size:${u(11.5)};font-weight:600">${PLAB[k.phase]}</span></div>
-    <div style="display:grid;gap:${u(5)}">${timeBig(k.city[1],54,true)}<span style="font-size:${u(11.5)};font-weight:600">${k.off.text}</span></div></div>`
+    <div style="display:grid;gap:${u(1)}"><b style="font-size:${u(15)};font-weight:800">${k.city[0]}</b><span style="font-size:${u(11.5)};font-weight:600">${PLAB[k.phase]}${wxBit(k,11.5,true)}</span></div>
+    <div style="display:grid;gap:${u(5)}">${clockTime(k,54,true)}<span style="font-size:${u(11.5)};font-weight:600">${k.off.text}</span></div></div>`
 };
 
 function shell(pal,w,h,inner,cap,desc){
@@ -772,7 +853,8 @@ function shell(pal,w,h,inner,cap,desc){
 }
 function clockCtx(){
   const city=CITIES.find(x=>x[1]===S.city)||CITIES[0],t=instant(),p=parts(t,city[1]),phase=phaseOf(p.h);
-  return {city,phase,pal:palette('clear',phase,S.dark),off:offsetInfo(t,city[1]),p};
+  // The playground clock shows the selected condition as its city's weather.
+  return {city,phase,pal:palette('clear',phase,S.dark),off:offsetInfo(t,city[1]),p,wx:{cond:S.cond,temp:tAt(FX[S.cond],p.h)}};
 }
 let lastKey='';
 function spokenTime(p){return S.h24?`${pad(p.h)}:${pad(p.m)}`:`${p.h%12||12}:${pad(p.m)} ${p.h<12?'AM':'PM'}`;}
@@ -797,8 +879,38 @@ function render(){
   $('#hour').value=S.hour;$('#hourval').textContent=`${fmtClock(S.hour)} · ${PLAB[phase]}`;
   $('#city').value=S.city;
   renderScreens(c,k,wdesc,cdesc);
+  renderProposals(c,wdesc);
   document.querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',String(String(S[b.dataset.k])===b.dataset.v)));
   tick(true);save();
+}
+/* Fixed examples for the clock proposal (offsets are from Dubai). */
+const CLOCK_EX=[
+  {city:['Colombo','Asia/Colombo','CMB'],cond:'rain',phase:'night',temp:26,off:'+1h 30m',time:{h24:'18:59',h12:'6:59',ap:'PM'}},
+  {city:['Tokyo','Asia/Tokyo','TYO'],cond:'partly',phase:'day',temp:19,off:'+5h',time:{h24:'11:20',h12:'11:20',ap:'AM'}},
+  {city:['London','Europe/London','LON'],cond:'fog',phase:'dusk',temp:9,off:'−3h',time:{h24:'17:45',h12:'5:45',ap:'PM'}},
+];
+function renderProposals(c,wdesc){
+  const th='phone '+(S.dark?'dark':'light');
+  const pick=names=>WSIZES.filter(x=>names.includes(x[3]));
+  const row=(label,html)=>`<div class="row-h">${label}</div><div class="home">${html}</div>`;
+  const ws=(sizes,state,note)=>{OPT.refresh=state;const h=sizes.map(([n,w,hh,f])=>shell(c.pal,w,hh,W[f](c),`${n} · ${note}`,wdesc)).join('');OPT.refresh=null;return h;};
+  $('#propRefresh').className=th;
+  $('#propRefresh').innerHTML=
+    row('Idle',ws(pick(['s21','s22','m42','l43']),'idle','idle'))+
+    row('After a tap',ws(pick(['m42','l43']),'busy','updating')+ws(pick(['m42','l43']),'done','updated'));
+  const V=[
+    {key:'now',label:'Now: sun & moon',art:false,colors:'time'},
+    {key:'a',label:'A: weather art, time colors',art:true,colors:'time'},
+    {key:'b',label:'B: weather art, weather colors',art:true,colors:'weather'},
+  ];
+  const ctx=(ex,v)=>({city:ex.city,phase:ex.phase,off:{text:ex.off},time:ex.time,wx:{cond:ex.cond,temp:ex.temp},
+    artCond:v.art?ex.cond:null,pal:palette(v.colors==='weather'?ex.cond:'clear',ex.phase,S.dark)});
+  const desc=(ex)=>`${ex.city[0]}, ${PLAB[ex.phase].toLowerCase()}, ${LABEL[ex.cond].toLowerCase()} ${T(ex.temp)} degrees.`;
+  $('#propClock').className=th;
+  $('#propClock').innerHTML=CLOCK_EX.map(ex=>row(`${ex.city[0]} · ${LABEL[ex.cond]} · ${PLAB[ex.phase]}`,
+      V.map(v=>{const k=ctx(ex,v);return shell(k.pal,140,140,CK.c22(k),v.label,desc(ex));}).join(''))).join('')+
+    row('A at every size',CLOCK_EX.slice(0,1).flatMap(ex=>CSIZES.map(([n,w,h,f])=>{const k=ctx(ex,V[1]);return shell(k.pal,w,h,CK[f](k),`${n} · ${ex.city[0]}`,desc(ex));})).join('')+
+      CLOCK_EX.slice(1,2).flatMap(ex=>CSIZES.slice(1).map(([n,w,h,f])=>{const k=ctx(ex,V[1]);return shell(k.pal,w,h,CK[f](k),`${n} · ${ex.city[0]}`,desc(ex));})).join(''));
 }
 function tick(skip){
   const t=instant();

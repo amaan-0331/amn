@@ -16,6 +16,8 @@ data class DayPoint(
     val pop: Int,
     val precipMm: Double,
     val snowCm: Double = 0.0,
+    /** Short weekday, e.g. "Fri". Empty when unknown. */
+    val weekday: String = "",
 )
 
 /**

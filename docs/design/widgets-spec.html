@@ -312,12 +312,12 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
 
   <section class="edit props" id="proposals" aria-labelledby="propH">
     <div class="edit-head">
-      <h2 id="propH">Proposals</h2>
-      <p>Two ideas to decide on before building. The mockups follow the controls at the top of the page: condition, time of day, theme, units and 12/24h.</p>
+      <h2 id="propH">Decisions</h2>
+      <p>Two changes, both decided and built. The mockups follow the controls at the top of the page: condition, time of day, theme, units and 12/24h.</p>
     </div>
 
     <div class="prop">
-      <h3>1 · Refresh button on the weather widget</h3>
+      <h3>1 · Refresh button on the weather widget · decided</h3>
       <p>A small round button placed where each size has free space. The art owns the top-right corner, so:</p>
       <ul>
         <li><b>4×2:</b> right after the time in the header.</li>
@@ -328,13 +328,15 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
       <div class="phone" id="propRefresh"></div>
       <ul>
         <li><b>Tap:</b> refreshes this widget's location and forecast without opening the app. Tapping anywhere else still opens the edit page. The icon is 16 dp, but its tap area is padded to about 40 dp.</li>
-        <li><b>States:</b> widgets can't animate, so a tap switches the button to a dimmed "Updating…" until the new forecast arrives, then "Just now". With no connection it shows "Offline" for a few seconds and goes back.</li>
-        <li><b>Cost:</b> one Open-Meteo request per tap. Taps within two minutes of the last update are ignored.</li>
+        <li><b>States:</b> widgets can't animate, so a tap switches the button to a dimmed "Updating…" until the new forecast arrives. With no connection it shows "Offline" for a few seconds, then goes back.</li>
+        <li><b>Just now:</b> for two minutes after any update, whether from a tap or the 30-minute refresh, the button shows a dimmed "Just now" and taps do nothing. Then it goes back to "x min ago". At 4×2 the button only gets words while updating or just updated. At 2×2 it stays an icon and dims.</li>
+        <li><b>Cost:</b> at most one Open-Meteo request per tap, and none within two minutes of the last update.</li>
+        <li><b>2×2 summaries</b> are capped at 16 characters so the chip and the button share the bottom row.</li>
       </ul>
     </div>
 
     <div class="prop">
-      <h3>2 · Clock with weather art</h3>
+      <h3>2 · Clock with weather art · decided: B</h3>
       <p>Today the clock's art is the sun or moon for the city's time of day. Here it's replaced by the city's weather. Three cities, each in three versions:</p>
       <div class="phone" id="propClock"></div>
       <ul>
@@ -342,7 +344,7 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
         <li><b>B · Weather art, weather colors:</b> matches the weather widget exactly. That ties the two together, but the time of day then only shows in the "Night"/"Day" label. Next to a weather widget for the same city, it reads as a duplicate.</li>
         <li><b>What's lost in both:</b> the sun on the horizon at dawn and dusk. It can stay for clear skies, as in A here.</li>
       </ul>
-      <p class="rec"><b>Recommendation: A.</b> The clock gains the weather at a glance and keeps its own identity as a time-of-day widget.</p>
+      <p class="rec"><b>Decided: B.</b> The clock takes the weather widget's look for its city: condition art and condition colors, with "Night"/"Day" in the text line. With weather switched off, or before the first fetch, it falls back to the sun and moon on time-of-day colors. The playground clocks above now use B.</p>
     </div>
   </section>
 
@@ -361,7 +363,7 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
           <dt>Color</dt><dd>Weather: driven by the current condition and time of day. Clock: driven by the time of day in the chosen city. Both get darker versions when the phone is in dark mode.</dd>
           <dt>Type</dt><dd>Condensed display numerals (Barlow Condensed Bold, OFL). Labels in the system sans.</dd>
           <dt>Weather content</dt><dd>City, current time, temperature, condition, summary line, high/low, feels-like, chance and amount of precipitation, hourly strip, 3-day outlook.</dd>
-          <dt>Clock content</dt><dd>Digital time for one chosen city, city name, time difference from you, day/night. 12/24h and seconds are settings.</dd>
+          <dt>Clock content</dt><dd>Digital time for one chosen city, city name, time difference from you, day/night, and the city's weather (art, colors and temperature, refreshed hourly). 12/24h, seconds and weather are settings.</dd>
           <dt>Data</dt><dd>Open-Meteo, refreshed about every 30 minutes. Units are set separately for temperature and precipitation.</dd>
           <dt>Tap</dt><dd>Opens that widget's edit page. AMN has no other screens for now.</dd>
         </dl>
@@ -448,7 +450,7 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
 
       <section class="sec" id="summary">
         <h2>Summary line</h2>
-        <p>One short line, picked in two tiers. Urgent rules change what you do, so they're checked in order and the first that applies wins. Otherwise every "flavor" rule that applies becomes a candidate, and a seed rotates between candidates and their phrasings. The widget changes the seed every two hours (offset per widget), so the line varies through the day without flickering between redraws. Each size only uses phrasings that fit: 17 characters at 2×1, 19 at 2×2, 22 at 4×2 and 24 at 4×3 and 4×4. Temperatures in the text follow the unit setting. The widget lab's Summary engine panel shows every rule's verdict and the arithmetic for any condition, hour and seed.</p>
+        <p>One short line, picked in two tiers. Urgent rules change what you do, so they're checked in order and the first that applies wins. Otherwise every "flavor" rule that applies becomes a candidate, and a seed rotates between candidates and their phrasings. The widget changes the seed every two hours (offset per widget), so the line varies through the day without flickering between redraws. Each size only uses phrasings that fit: 17 characters at 2×1, 16 at 2×2 (it shares its bottom row with the refresh button), 22 at 4×2 and 24 at 4×3 and 4×4. Temperatures in the text follow the unit setting. The widget lab's Summary engine panel shows every rule's verdict and the arithmetic for any condition, hour and seed.</p>
         <div class="tbl"><table>
           <thead><tr><th>Tier</th><th>Rule</th><th>Example phrasings</th></tr></thead>
           <tbody>
@@ -756,7 +758,7 @@ const locIcon=()=>S.loc==='gps'
 const warnIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z" fill="currentColor"/></svg>`;
 const dropIcon=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2.5S5 10.2 5 14.5a7 7 0 0 0 14 0C19 10.2 12 2.5 12 2.5z" fill="currentColor"/></svg>`;
 const timeSpan=tz=>`<span class="tm"><span data-t="hm"${tz?` data-tz="${tz}"`:''}></span><span class="ap" data-t="ap"${tz?` data-tz="${tz}"`:''}></span></span>`;
-const meta=(fs,warn,noButton)=>`<div class="meta" style="font-size:${u(fs)}">${locIcon()}<b>${cityName()}</b><span aria-hidden="true">·</span>${timeSpan()}${warn&&S.stale?warnIcon():''}${noButton?'':rfButton()}</div>`;
+const meta=(fs,warn,noButton)=>`<div class="meta" style="font-size:${u(fs)}">${locIcon()}<b>${cityName()}</b><span aria-hidden="true">·</span>${timeSpan()}${warn&&S.stale?warnIcon():''}${noButton?'':rfButton(true)}</div>`;
 const hilo=c=>`H ${T(c.fx.hi)}° · L ${T(c.fx.lo)}°`;
 const upd=()=>S.stale?`${warnIcon()}Updated 3 h ago`:'Updated 12 min ago';
 
@@ -764,7 +766,7 @@ const upd=()=>S.stale?`${warnIcon()}Updated 3 h ago`:'Updated 12 min ago';
 let OPT={refresh:null};
 const refreshIco=()=>`<svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/></svg>`;
 const RF_LABEL={idle:'12 min ago',busy:'Updating…',done:'Just now'};
-const rfButton=()=>OPT.refresh?`<span class="rfb${OPT.refresh==='busy'?' busy':''}">${refreshIco()}</span>`:'';
+const rfButton=(words)=>!OPT.refresh?'':(words&&OPT.refresh!=='idle')?`<span class="rf${OPT.refresh==='busy'?' busy':''}" style="margin-left:.4em">${refreshIco()}${RF_LABEL[OPT.refresh]}</span>`:`<span class="rfb${OPT.refresh!=='idle'?' busy':''}">${refreshIco()}</span>`;
 const rfChip=()=>`<span class="rf${OPT.refresh==='busy'?' busy':''}">${refreshIco()}${RF_LABEL[OPT.refresh]}</span>`;
 
 function strip(c,n,pop,panel){
@@ -854,7 +856,8 @@ function shell(pal,w,h,inner,cap,desc){
 function clockCtx(){
   const city=CITIES.find(x=>x[1]===S.city)||CITIES[0],t=instant(),p=parts(t,city[1]),phase=phaseOf(p.h);
   // The playground clock shows the selected condition as its city's weather.
-  return {city,phase,pal:palette('clear',phase,S.dark),off:offsetInfo(t,city[1]),p,wx:{cond:S.cond,temp:tAt(FX[S.cond],p.h)}};
+  // Option B: the clock takes its city's weather art and colors (the selected condition here).
+  return {city,phase,pal:palette(S.cond,phase,S.dark),artCond:S.cond,off:offsetInfo(t,city[1]),p,wx:{cond:S.cond,temp:tAt(FX[S.cond],p.h)}};
 }
 let lastKey='';
 function spokenTime(p){return S.h24?`${pad(p.h)}:${pad(p.m)}`:`${p.h%12||12}:${pad(p.m)} ${p.h<12?'AM':'PM'}`;}

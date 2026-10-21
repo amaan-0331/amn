@@ -50,6 +50,10 @@ class WidgetBridge {
     };
   }
 
+  /// Widget lab: every summary rule's verdict and how the line was picked.
+  static Future<Map<String, Object?>> explainSummary(Map<String, Object?> args) async =>
+      await _channel.invokeMapMethod<String, Object?>('explainSummary', args) ?? {};
+
   /// Closes the page without saving. When adding, the widget isn't added.
   static Future<void> cancel() => _channel.invokeMethod('cancel');
 }

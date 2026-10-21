@@ -7,6 +7,9 @@ import dev.amaan.amn.widgets.config.PREVIEW_VIEW_TYPE
 import dev.amaan.amn.widgets.config.PreviewViewFactory
 import dev.amaan.amn.widgets.config.WidgetConfigActivity
 import dev.amaan.amn.widgets.core.CityOffset
+import dev.amaan.amn.widgets.core.Condition
+import dev.amaan.amn.widgets.core.Summary
+import dev.amaan.amn.widgets.data.SampleForecast
 import dev.amaan.amn.widgets.data.ClockSchedule
 import dev.amaan.amn.widgets.data.ClockWeather
 import dev.amaan.amn.widgets.data.ClockSettings
@@ -139,6 +142,34 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                     val gmt = "GMT${if (off >= 0) "+" else "−"}${kotlin.math.abs(off) / 60}${if (off % 60 != 0) ":%02d".format(kotlin.math.abs(off) % 60) else ""}"
                     mapOf("time" to now.atZone(zone).format(fmt), "offset" to CityOffset.between(zone, phone, now).label, "gmt" to gmt)
                 })
+            }
+
+            // Widget lab: how the summary line is picked for a sample condition, per widget size.
+            "explainSummary" -> {
+                val condition = runCatching { Condition.valueOf((call.argument<String>("condition") ?: "partly").uppercase()) }.getOrDefault(Condition.PARTLY)
+                val hour = call.argument<Int>("hour") ?: 12
+                val h24 = call.argument<Boolean>("h24") ?: true
+                val seed = (call.argument<Number>("seed"))?.toLong() ?: 0L
+                val units = Units(fahrenheit = call.argument<Boolean>("fahrenheit") ?: false)
+                val f = SampleForecast.of(condition, hour)
+                val deg = { c: Double -> "${units.temp(c)}°" }
+                val sizes = listOf("2×1" to 17, "2×2" to 19, "4×2" to 22, "4×3 / 4×4" to 24)
+                val detail = Summary.explain(f, h24, deg, 24, seed)
+                result.success(mapOf(
+                    "seed" to seed,
+                    "winner" to detail.winner,
+                    "text" to detail.line.text,
+                    "candidateIndex" to detail.candidateIndex,
+                    "candidateCount" to detail.candidateCount,
+                    "variantIndex" to detail.variantIndex,
+                    "variantCount" to detail.variantCount,
+                    "rules" to detail.rules.map {
+                        mapOf("id" to it.id, "urgent" to it.urgent, "description" to it.description, "variants" to it.variants, "fitting" to it.fitting)
+                    },
+                    "sizes" to sizes.map { (label, max) ->
+                        mapOf("label" to label, "maxLen" to max, "text" to Summary.of(f, h24, deg, max, seed).text)
+                    },
+                ))
             }
 
             else -> result.notImplemented()

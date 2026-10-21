@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'summary_engine.dart';
 import 'ui.dart';
 
 /// Page that renders every widget size through the real preview,
@@ -35,6 +36,8 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   late String _zone = _pick(widget.query['city'], _clockCities.keys.toList(), 'Asia/Tokyo');
   late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both'], 'both');
   late bool _oneUi = widget.query['grid'] == 'oneui';
+  // Same rotation as the widget: a new seed every two hours.
+  late int _seed = int.tryParse(widget.query['seed'] ?? '') ?? DateTime.now().millisecondsSinceEpoch ~/ 7200000;
 
   static String _pick(String? v, List<String> allowed, String fallback) => allowed.contains(v) ? v! : fallback;
 
@@ -42,6 +45,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
         'condition': _condition,
         'hour': _hour.round(),
         'h24': _h24,
+        'seed': _seed,
         if (_dark != null) 'dark': _dark,
       };
 
@@ -108,6 +112,15 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               ChoiceChip(label: Text(k), selected: k == _kind, showCheckmark: false, onSelected: (_) => setState(() => _kind = k)),
             FilterChip(label: const Text('One UI grid'), selected: _oneUi, onSelected: (v) => setState(() => _oneUi = v)),
           ]),
+          if (_kind != 'clock')
+            SummaryEngine(
+              condition: _condition,
+              hour: h,
+              h24: _h24,
+              fahrenheit: _fahrenheit,
+              seed: _seed,
+              onSeed: (s) => setState(() => _seed = s),
+            ),
           if (_kind != 'clock')
             for (final s in _oneUi ? oneUiWeatherSizes : weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),
           if (_kind != 'weather')

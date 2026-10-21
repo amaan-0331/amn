@@ -207,11 +207,22 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
             Spacer(GlanceModifier.defaultWeight())
             // The time is part of the layout, so it's sized in dp and ignores the font-size setting.
             // A fixed height stops AndroidRemoteViews from taking all remaining space.
-            ClockText(
-                zone.id, pattern, timeSize, pal.ink,
-                GlanceModifier.height((timeSize * if (tiny) 2.05f else 1.0f).dp),
-                unit = android.util.TypedValue.COMPLEX_UNIT_DIP,
-            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                ClockText(
+                    zone.id, pattern.removeSuffix(" a"), timeSize, pal.ink,
+                    GlanceModifier.height((timeSize * if (tiny) 2.05f else 1.0f).dp),
+                    unit = android.util.TypedValue.COMPLEX_UNIT_DIP,
+                )
+                // AM/PM at 42% of the time, as in the design, so the digits dominate.
+                if (pattern.endsWith(" a")) {
+                    val ap = timeSize * .42f
+                    ClockText(
+                        zone.id, "a", ap, pal.ink,
+                        GlanceModifier.height((ap * 1.35f).dp).padding(start = (ap * .3f).dp, bottom = (timeSize * .08f).dp),
+                        unit = android.util.TypedValue.COMPLEX_UNIT_DIP,
+                    )
+                }
+            }
             if (!tiny) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
@@ -239,11 +250,11 @@ internal fun cityCode(name: String): String {
 
 /**
  * Rough width of a time pattern in ems for the system's condensed bold face:
- * digits about 0.56 em, separators and spaces 0.27 em, "AM"/"PM" 1.25 em.
+ * digits about 0.56 em, separators and spaces 0.27 em; "AM"/"PM" is drawn at 42% of the size.
  */
 internal fun timeWidthEm(pattern: String): Float {
     val digits = pattern.count { it == 'H' || it == 'm' || it == 's' } + if (pattern.startsWith("h")) 2 else 0
     val separators = pattern.count { it == ':' || it == ' ' }
-    val amPm = if (pattern.contains('a')) 1.25f else 0f
+    val amPm = if (pattern.contains('a')) 1.25f * .42f + .15f else 0f
     return digits * .56f + separators * .27f + amPm
 }

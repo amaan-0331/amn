@@ -55,8 +55,10 @@ object Palettes {
             }
         }
         if (dark && phase != Phase.NIGHT) {
-            top = mix(top, darkBase, .55)
-            bottom = mix(bottom, darkBase, .62)
+            // Dawn and dusk are already deep; darken them less so the sunrise and sunset colors survive.
+            val soft = phase == Phase.DAWN || phase == Phase.DUSK
+            top = mix(top, darkBase, if (soft) .32 else .55)
+            bottom = mix(bottom, darkBase, if (soft) .40 else .62)
         }
         var (ink, ratio) = pickInk(top, bottom, preferred)
         var guard = 0

@@ -398,22 +398,32 @@ pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--li
 
       <section class="sec" id="summary">
         <h2>Summary line</h2>
-        <p>One short line. The app checks the rules in order and uses the first that matches. Temperature thresholds are compared in °C, whatever unit is shown. Rain or snow means a precipitation probability of at least 50% and a rain, snow or storm weather code. Times follow the 12/24h setting. From 18:00, rule 8 is checked before rule 7, because by evening tomorrow matters more.</p>
+        <p>One short line, picked in two tiers. Urgent rules change what you do, so they're checked in order and the first that applies wins. Otherwise every "flavor" rule that applies becomes a candidate, and a seed rotates between candidates and their phrasings. The widget changes the seed every two hours (offset per widget), so the line varies through the day without flickering between redraws. Each size only uses phrasings that fit: 17 characters at 2×1, 19 at 2×2, 22 at 4×2 and 24 at 4×3 and 4×4. Temperatures in the text follow the unit setting. The widget lab's Summary engine panel shows every rule's verdict and the arithmetic for any condition, hour and seed.</p>
         <div class="tbl"><table>
-          <thead><tr><th>#</th><th>When</th><th>Line</th></tr></thead>
+          <thead><tr><th>Tier</th><th>Rule</th><th>Example phrasings</th></tr></thead>
           <tbody>
-            <tr><td class="n">1</td><td>A thunderstorm is forecast for the rest of today</td><td>Storms until 17:00 · Storms from 16:00 · Storms tonight</td></tr>
-            <tr><td class="n">2</td><td>Raining or snowing now and it stops before midnight</td><td>Dry by 15:00</td></tr>
-            <tr><td class="n">3</td><td>Raining or snowing now and it carries on</td><td>Rain all day (before 15:00) · Snow into tonight</td></tr>
-            <tr><td class="n">4</td><td>Dry now, rain or snow later today</td><td>Rain from 16:00</td></tr>
-            <tr><td class="n">5</td><td>Foggy now and it clears today</td><td>Fog clears by 11:00</td></tr>
-            <tr><td class="n">6</td><td>Rain or snow tomorrow</td><td>Rain tomorrow · Snow tomorrow</td></tr>
-            <tr><td class="n">7</td><td>Today's high differs from yesterday's by 3 °C or more</td><td>Hotter today · Cooler today</td></tr>
-            <tr><td class="n">8</td><td>Tomorrow's high differs from today's by 3 °C or more</td><td>Hotter tomorrow · Cooler tomorrow</td></tr>
-            <tr><td class="n">9</td><td>None of the above</td><td>Like yesterday</td></tr>
+            <tr><td>Urgent 1</td><td>Thunderstorm in the rest of today</td><td>Storms until 17:00 · Thunder by 16:00 · Stormy night ahead</td></tr>
+            <tr><td>Urgent 2</td><td>Raining or snowing now, stops today</td><td>Dry by 15:00 · Rain eases by 15:00 · Clearing up by 15:00</td></tr>
+            <tr><td>Urgent 3</td><td>Raining or snowing now, carries on</td><td>Rain all day · Umbrella day · Snow day · Wet evening ahead</td></tr>
+            <tr><td>Urgent 4</td><td>Dry now, wet later today</td><td>Rain from 16:00 · Umbrella by 16:00 · Snow arrives at 16:00</td></tr>
+            <tr><td>Urgent 5</td><td>Foggy now, clears today</td><td>Fog clears by 11:00 · Misty until 11:00</td></tr>
+            <tr><td>Urgent 6</td><td>40 °C or hotter, day still ahead</td><td>Scorcher: 42° today · Peak heat 42°</td></tr>
+            <tr><td>Urgent 7</td><td>Below zero tonight</td><td>Freezing tonight · Frost tonight</td></tr>
+            <tr><td>Flavor</td><td>Rain or snow tomorrow</td><td>Rain tomorrow · Umbrella tomorrow · White one tomorrow</td></tr>
+            <tr><td>Flavor</td><td>Today vs yesterday (±3°), before 18:00</td><td>Hotter today · Up 5° on yesterday · Cooler than yesterday</td></tr>
+            <tr><td>Flavor</td><td>Tomorrow vs today (±3°)</td><td>Cooler tomorrow · Fresher tomorrow · Heats up tomorrow</td></tr>
+            <tr><td>Flavor</td><td>Next days all dry, or mostly wet</td><td>Dry days ahead · No rain in sight · Wet days ahead</td></tr>
+            <tr><td>Flavor</td><td>Sunrise or sunset within the hour</td><td>Sunset at 17:52 · Golden hour soon · Sun's up at 6:21</td></tr>
+            <tr><td>Flavor</td><td>Clear night</td><td>Clear skies tonight · Starry night</td></tr>
+            <tr><td>Flavor</td><td>Drops 5° or more by evening</td><td>Down to 28° by 21:00 · Cooler by 21:00</td></tr>
+            <tr><td>Flavor</td><td>Feels 3° or more off</td><td>Feels like 39° · Feels colder: 2° · Wind chill: 2°</td></tr>
+            <tr><td>Flavor</td><td>Cool morning that warms 8° or more</td><td>Warms up to 31° · Heading for 31°</td></tr>
+            <tr><td>Flavor</td><td>Hot (35–40 °C), daytime</td><td>Hot one: 37° · Peaks at 37°</td></tr>
+            <tr><td>Flavor</td><td>Mild, dry and sunny</td><td>Lovely day out · Perfect weather</td></tr>
+            <tr><td>Fallback</td><td>Nothing notable</td><td>Like yesterday · Blue skies · Grey but dry · Quiet night ahead</td></tr>
           </tbody>
         </table></div>
-        <p>Keep every line in string resources with a placeholder for the time, so it can be translated. Aim for 18 characters or fewer in English so it fits the 2×1 size without an ellipsis. Write it as a pure function of the forecast and the hour, and unit-test each rule.</p>
+        <p>Rules live in <code>core/Summary.kt</code> as a list, so adding one is a single entry. Keep phrasings in string resources when adding translations.</p>
       </section>
 
       <section class="sec" id="data">

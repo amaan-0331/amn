@@ -39,6 +39,8 @@ data class Explanation(
  * seed every two hours, so the line varies through the day without flickering between redraws.
  *
  * Only phrasings up to [maxLen] characters are used, so each widget size gets a line that fits.
+ * Every urgent rule has a phrasing of 16 characters or less, and an urgent rule that applies always
+ * wins, even when none of its phrasings fits (the shortest is used), so small widgets never skip one.
  * Temperatures in the text go through [deg], so they follow the unit setting.
  */
 object Summary {
@@ -74,10 +76,13 @@ object Summary {
             val cand = r.eval(c)
             val fit = cand?.variants.orEmpty().filter { it.length <= maxLen }
             traces += RuleTrace(r.id, true, r.description, cand?.variants, fit)
-            if (line == null && cand != null && fit.isNotEmpty()) {
-                variantCount = fit.size
-                variantIndex = seed.mod(fit.size)
-                line = SummaryLine(cand.rule, fit[variantIndex])
+            if (line == null && cand != null) {
+                // An urgent rule always wins. If none of its phrasings fits, use the shortest one
+                // (the widget shortens it further); skipping it would show something less important.
+                val pool = fit.ifEmpty { listOf(cand.variants.minBy { it.length }) }
+                variantCount = pool.size
+                variantIndex = seed.mod(pool.size)
+                line = SummaryLine(cand.rule, pool[variantIndex])
                 winner = r.id
             }
         }
@@ -145,14 +150,14 @@ object Summary {
                     val e = c.firstFrom(1) { c.h[it].condition != Condition.STORM }
                     if (e > 0 && c.today(e)) {
                         val t = c.at(c.h[e].hour)
-                        Cand("storm", listOf("Storms until $t", "Stormy till $t", "Thunder until $t"))
+                        Cand("storm", listOf("Storms until $t", "Stormy till $t", "Thunder until $t", "Storm till $t"))
                     } else {
                         Cand("storm", listOf("Storms tonight", "Stormy night ahead", "Thunder tonight"))
                     }
                 }
                 else -> {
                     val t = c.at(c.h[i].hour)
-                    Cand("storm", listOf("Storms from $t", "Thunder by $t", "Storms roll in at $t"))
+                    Cand("storm", listOf("Storms from $t", "Thunder by $t", "Storms roll in at $t", "Storms at $t"))
                 }
             }
         },
@@ -174,8 +179,8 @@ object Summary {
                 when {
                     c.now < 15 && snow -> Cand("wet-all-day", listOf("Snow all day", "Snow day", "Snow keeps coming"))
                     c.now < 15 -> Cand("wet-all-day", listOf("Rain all day", "Umbrella day", "A wet one today"))
-                    snow -> Cand("wet-all-day", listOf("Snow into tonight", "Snowy night ahead"))
-                    else -> Cand("wet-all-day", listOf("Rain into tonight", "Wet evening ahead", "Rain on into the night"))
+                    snow -> Cand("wet-all-day", listOf("Snow into tonight", "Snowy night ahead", "Snow all night"))
+                    else -> Cand("wet-all-day", listOf("Rain into tonight", "Wet evening ahead", "Rain on into the night", "Rain all night"))
                 }
             }
         },

@@ -49,7 +49,7 @@ object WeatherRefresher {
                 if (fix != null) {
                     lat = fix.latitude
                     lon = fix.longitude
-                    place = gpsPlace ?: location.placeName(lat, lon).also { gpsPlace = it }
+                    place = gpsPlace ?: runCatching { location.placeName(lat, lon) }.getOrNull().also { gpsPlace = it }
                 }
             }
             runCatching {
@@ -61,10 +61,19 @@ object WeatherRefresher {
             }.onFailure { Log.w(TAG, "Weather refresh failed for $id", it) }
         }
         WeatherWidget().redrawAll(context)
+        if (done.isNotEmpty()) WeatherSchedule.redrawAfterJustNow(context)
         return done
     }
 
     suspend fun refreshAll(context: Context) = refresh(context, weatherWidgetIds(context))
+}
+
+/** Redraws weather widgets once, so a "Just now" label ages into "2 min ago". */
+class WeatherRedrawWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        WeatherWidget().redrawAll(applicationContext)
+        return Result.success()
+    }
 }
 
 class WeatherRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -93,6 +102,17 @@ object WeatherSchedule {
             NOW,
             ExistingWorkPolicy.REPLACE,
             OneTimeWorkRequestBuilder<WeatherRefreshWorker>().setConstraints(network).build(),
+        )
+    }
+
+    fun redrawAfterJustNow(context: Context) = redrawIn(context, WeatherWidget.JUST_NOW_MS + 5_000, "amn-weather-redraw")
+
+    /** Redraws all weather widgets after [delayMs], so time-based labels move on by themselves. */
+    fun redrawIn(context: Context, delayMs: Long, name: String) {
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            name,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<WeatherRedrawWorker>().setInitialDelay(delayMs, TimeUnit.MILLISECONDS).build(),
         )
     }
 

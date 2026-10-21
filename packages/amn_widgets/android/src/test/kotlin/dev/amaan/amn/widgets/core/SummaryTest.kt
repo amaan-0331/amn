@@ -106,8 +106,18 @@ class SummaryTest {
 
     @Test fun everyLineFitsItsSize() {
         val all = listOf(clear(10), partly(10), cloudy(10), rain(10), storm(10), snow(9), fog(8), clear(22), rain(22), storm(14), partly(17))
-        for (max in listOf(17, 19, 22, 24)) for (f in all) for (text in lines(f, max)) {
+        for (max in listOf(16, 17, 22, 24)) for (f in all) for (text in lines(f, max)) {
             assertTrue(text.length <= max || lines(f, max).size == 1, "\"$text\" is longer than $max")
+        }
+    }
+
+    @Test fun smallSizesPickTheSameUrgentRule() {
+        val urgent = listOf(rain(10), rain(22), storm(10), storm(23), snow(9), snow(16), fog(8),
+            fx(9, 15.0, 15.0, "10 10 20 60 70 40 10 10 10 10 10 10", "c c c r r c c c c c c c", DayPoint(Condition.CLOUDY, 15.0, 9.0, 10, 0.0)))
+        for (f in urgent) for (h24 in listOf(true, false)) {
+            val big = Summary.explain(f, h24, maxLen = 24).winner
+            val small = Summary.explain(f, h24, maxLen = 16).winner
+            assertEquals(big, small, "at 16 chars: ${Summary.of(f, h24, maxLen = 16).text}")
         }
     }
 

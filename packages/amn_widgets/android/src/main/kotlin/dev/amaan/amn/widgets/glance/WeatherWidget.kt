@@ -17,6 +17,7 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.LocalState
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -64,6 +65,9 @@ class WeatherWidget : GlanceAppWidget() {
     companion object {
         /** After this, the widget shows a warning next to the time. */
         const val STALE_MS = 3 * 60 * 60_000L
+
+        /** For this long after an update the refresh button says "Just now" and ignores taps. */
+        const val JUST_NOW_MS = 2 * 60_000L
     }
 
     // Exact: the layout is picked from the real size and shape (see WeatherLayout.of).
@@ -80,7 +84,7 @@ class WeatherWidget : GlanceAppWidget() {
             // Reading the render version makes redraw() recompose this with fresh settings and forecast.
             glanceState.renderVersion()
             val state = preview ?: WeatherState(store.weather(appWidgetId), store.units())
-            WeatherContent(state, preview?.previewWidgetId ?: appWidgetId, isPreview = preview != null)
+            WeatherContent(state, preview?.previewWidgetId ?: appWidgetId, isPreview = preview != null, glanceState = glanceState)
         }
     }
 }
@@ -128,7 +132,8 @@ private class Look(val pal: WidgetPalette, val fit: Fit) {
 
 /** The five weather layouts and their design sizes (dp). */
 internal enum class WeatherLayout(val w: Float, val h: Float, val maxSummary: Int) {
-    SMALL(140f, 70f, 17), SQUARE(140f, 140f, 19), WIDE(290f, 140f, 22), TALL(290f, 215f, 24), LARGE(290f, 290f, 24);
+    SMALL(140f, 70f, 17), SQUARE(140f, 140f, 16), // 2×2 shares its bottom row with the refresh button
+    WIDE(290f, 140f, 22), TALL(290f, 215f, 24), LARGE(290f, 290f, 24);
 
     companion object {
         /** By width and shape: 4×2 is about twice as wide as tall, 4×3 a bit wider than tall. */
@@ -146,7 +151,7 @@ internal enum class WeatherLayout(val w: Float, val h: Float, val maxSummary: In
 }
 
 @Composable
-private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boolean) {
+private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boolean, glanceState: Any?) {
     val context = LocalContext.current
     val size = LocalSize.current
     val now = Instant.now()
@@ -174,11 +179,29 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
     val u = state.units
     // A new seed every two hours (offset per widget) rotates the line without flicker.
     val seed = debug?.seed ?: (System.currentTimeMillis() / 7_200_000L + appWidgetId)
-    val line = Summary.of(f, h24, deg = { "${u.temp(it)}°" }, maxLen = layout.maxSummary, seed = seed).text
+    val fontScale = context.resources.configuration.fontScale
+    val maxSummary = if (layout == WeatherLayout.SQUARE) squareChipChars(size, fit, fontScale) else layout.maxSummary
+    val line = Summary.of(f, h24, deg = { "${u.temp(it)}°" }, maxLen = maxSummary, seed = seed).text
+    // Spare height becomes forecast days rather than gaps: 4×3 gains rows when the slot is taller
+    // than the design's proportions, 4×4 shows up to five days.
+    val dayRows = when (layout) {
+        WeatherLayout.TALL -> ((size.height.value - layout.h * fit.k) / (DAY_ROW_DP * fit.k)).toInt()
+        WeatherLayout.LARGE -> 3 + ((size.height.value - layout.h * fit.k) / (DAY_ROW_DP * fit.k)).toInt()
+        else -> 0
+    }.coerceIn(0, f.days.size)
     fun t(c: Double) = "${u.temp(c)}°"
     val place = if (state.settings.useGps) cached?.placeName ?: "Current location" else state.settings.cityName
     val stale = live != null && System.currentTimeMillis() - f.fetchedAtEpochMs > WeatherWidget.STALE_MS
     val big = layout == WeatherLayout.TALL || layout == WeatherLayout.LARGE
+    val refresh = debug?.refresh?.let { runCatching { RefreshUi.valueOf(it.uppercase()) }.getOrNull() }
+        ?: refreshUi(glanceState, live?.fetchedAtEpochMs)
+    val refreshLabel = when (refresh) {
+        RefreshUi.BUSY -> "Updating…"
+        RefreshUi.DONE -> "Just now"
+        RefreshUi.OFFLINE -> "Offline"
+        // The lab shows what users see ("12 min ago"); the edit page's preview admits it's sample data.
+        RefreshUi.IDLE -> agoLabel(f.fetchedAtEpochMs, live == null && debug == null, stale)
+    }
     val wide = layout != WeatherLayout.SMALL && layout != WeatherLayout.SQUARE
     val k = fit::dp
 
@@ -211,13 +234,29 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                 else -> 11f
             }
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(ellipsize(place, if (wide) 22 else 11), style = look.style(metaSize, FontWeight.Bold), maxLines = 1)
+                val wideButtonLabel = layout == WeatherLayout.WIDE && refresh != RefreshUi.IDLE
+                Text(ellipsize(place, if (wideButtonLabel) 12 else if (wide) 22 else 11), style = look.style(metaSize, FontWeight.Bold), maxLines = 1)
                 Text(" · ", style = look.style(metaSize))
-                ClockText(zone, if (h24) "HH:mm" else "h:mm a", fit.sp(metaSize), look.pal.ink)
+                // AndroidRemoteViews otherwise stretches to the end of the row and squeezes out the refresh
+                // button, so the time gets a width for its longest text ("12:59 PM") and a matching height.
+                val metaPx = fit.sp(metaSize) * LocalContext.current.resources.configuration.fontScale
+                ClockText(
+                    zone, if (h24) "HH:mm" else "h:mm a", fit.sp(metaSize), look.pal.ink,
+                    GlanceModifier.width((metaPx * if (h24) 2.9f else 4.6f).dp).height((metaPx * 1.3f).dp),
+                )
                 if (stale && !big) Text("  ⚠", style = look.style(metaSize, FontWeight.Bold))
-                if (big) {
-                    Spacer(GlanceModifier.defaultWeight())
-                    Text(updatedLabel(f.fetchedAtEpochMs, live == null, stale), style = look.style(10f), maxLines = 1)
+                when {
+                    // 4×3 and 4×4: the button and the update time share one chip, top right.
+                    big -> {
+                        Spacer(GlanceModifier.defaultWeight())
+                        RefreshControl(look, refresh, refreshLabel, isPreview)
+                    }
+                    // 4×2: right after the time; it only gets words while updating or just updated.
+                    layout == WeatherLayout.WIDE -> {
+                        Spacer(GlanceModifier.width(k(6f)))
+                        RefreshControl(look, refresh, if (refresh == RefreshUi.IDLE) null else refreshLabel, isPreview)
+                    }
+                    else -> {}
                 }
             }
             // Leftover height is shared between the gaps (weighted spacers), not dumped in one place.
@@ -244,9 +283,9 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     }
                     Spacer(GlanceModifier.defaultWeight())
                     HourlyStrip(f, look, u, withPop = true, h24 = h24)
-                    if (layout == WeatherLayout.LARGE) {
+                    if (dayRows > 0) {
                         Spacer(GlanceModifier.defaultWeight())
-                        DailyRows(f, look, u, rowWidth = size.width - k(padH) * 2)
+                        DailyRows(f, look, u, rowWidth = size.width - k(padH) * 2, count = dayRows)
                     }
                 }
                 WeatherLayout.WIDE -> {
@@ -266,8 +305,13 @@ private fun WeatherContent(state: WeatherState, appWidgetId: Int, isPreview: Boo
                     look.Num(t(f.nowTempC), 60f)
                     Text("H ${t(f.today.highC)} · L ${t(f.today.lowC)}", style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(top = k(4f)))
                     Spacer(GlanceModifier.defaultWeight())
-                    Box(GlanceModifier.background(look.fill).cornerRadius(k(14f)).padding(horizontal = k(10f), vertical = k(5f))) {
-                        Text(line, style = look.style(12f, FontWeight.Bold), maxLines = 1)
+                    // 2×2: the button sits bottom right, next to the summary chip.
+                    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Box(GlanceModifier.background(look.fill).cornerRadius(k(14f)).padding(horizontal = k(10f), vertical = k(5f))) {
+                            Text(ellipsize(line, maxSummary), style = look.style(12f, FontWeight.Bold), maxLines = 1)
+                        }
+                        Spacer(GlanceModifier.defaultWeight())
+                        RefreshControl(look, refresh, null, isPreview)
                     }
                 }
                 WeatherLayout.SMALL -> {
@@ -301,15 +345,16 @@ private fun HourlyStrip(f: Forecast, look: Look, u: Units, withPop: Boolean, h24
 }
 
 @Composable
-private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp) {
+private fun DailyRows(f: Forecast, look: Look, u: Units, rowWidth: Dp, count: Int) {
     val k = look.fit::dp
-    val all = f.days.flatMap { listOf(it.lowC, it.highC) }
+    val days = f.days.take(count)
+    val all = days.flatMap { listOf(it.lowC, it.highC) }
     val mn = all.min()
     val span = (all.max() - mn).coerceAtLeast(1.0)
     // Fixed columns: day 58, icon 18, chance 30, low 26, high 26, plus five 6dp gaps (188 in all).
     val barWidth = (rowWidth - k(188f)).coerceAtLeast(k(30f))
     Column(GlanceModifier.fillMaxWidth()) {
-        f.days.take(3).forEachIndexed { i, d ->
+        days.forEachIndexed { i, d ->
             Row(GlanceModifier.fillMaxWidth().padding(vertical = k(3f)), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (i == 0) "Tomorrow" else d.weekday, style = look.style(11.5f, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.width(k(58f)))
                 Spacer(GlanceModifier.width(k(6f)))
@@ -354,6 +399,40 @@ private fun LoadingContent(state: WeatherState, appWidgetId: Int) {
     }
 }
 
+/**
+ * The refresh button: a ↻ in a soft pill, with an optional [label]. It's dimmed while updating and
+ * for two minutes after, when taps are ignored. It's a single Text on purpose: Glance drops views
+ * nested too deeply, and a Row holding an image and a text inside this header was dropped.
+ */
+@Composable
+private fun RefreshControl(look: Look, ui: RefreshUi, label: String?, isPreview: Boolean) {
+    val k = look.fit::dp
+    val dim = ui == RefreshUi.BUSY || ui == RefreshUi.DONE
+    val tint = ColorProvider(Color(look.pal.ink).copy(alpha = if (dim) .55f else 1f))
+    var pill = GlanceModifier.background(look.fill).cornerRadius(k(99f))
+        .padding(horizontal = k(if (label != null) 8f else 7f), vertical = k(3f))
+    if (!isPreview) pill = pill.clickable(actionRunCallback<RefreshWeatherAction>())
+    Text(
+        if (label != null) "↻ $label" else "↻",
+        modifier = pill,
+        style = TextStyle(color = tint, fontSize = look.fit.sp(if (label != null) 10.5f else 12f).sp, fontWeight = FontWeight.Bold),
+        maxLines = 1,
+    )
+}
+
+/** Height of one forecast day row at design scale (3 dp padding above and below an 18 dp row). */
+private const val DAY_ROW_DP = 24f
+
+/**
+ * How many characters the 2×2 summary chip can hold next to the refresh button, from the real
+ * width and font size, so the button never gets pushed off the edge.
+ */
+private fun squareChipChars(size: DpSize, fit: Fit, fontScale: Float): Int {
+    val content = size.width.value - 2 * 12 * fit.k - 30 * fit.k - 6 * fit.k - 20 * fit.k
+    val charWidth = 12 * fit.k * fontScale * .5f
+    return (content / charWidth).toInt().coerceIn(11, 19)
+}
+
 /** Glance can't ellipsize reliably, so long names are shortened here. */
 private fun ellipsize(text: String, max: Int): String = if (text.length <= max) text else text.take(max - 1).trimEnd() + "…"
 
@@ -367,14 +446,15 @@ private fun amount(f: Forecast, u: Units): String =
         if (u.inches) String.format(Locale.US, "%.2f in", f.today.precipMm / 25.4) else String.format(Locale.US, "%.1f mm", f.today.precipMm)
     }
 
-private fun updatedLabel(fetchedAt: Long, sample: Boolean, stale: Boolean): String {
+/** "12 min ago", "3 h ago" (with a warning when stale), or "Sample data" in previews. */
+private fun agoLabel(fetchedAt: Long, sample: Boolean, stale: Boolean): String {
     if (sample) return "Sample data"
     val min = ((System.currentTimeMillis() - fetchedAt) / 60_000).coerceAtLeast(0)
     val ago = when {
-        min < 1 -> "just now"
+        min < 2 -> "Just now"
         min < 60 -> "$min min ago"
         else -> "${min / 60} h ago"
     }
-    return if (stale) "⚠ Updated $ago" else "Updated $ago"
+    return if (stale) "⚠ $ago" else ago
 }
 

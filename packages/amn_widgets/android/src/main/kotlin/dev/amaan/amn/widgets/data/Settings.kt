@@ -76,7 +76,14 @@ data class WeatherState(
 )
 
 /** Widget lab overrides (debug builds). [condition] is ignored by the clock. */
-data class WidgetDebug(val condition: dev.amaan.amn.widgets.core.Condition, val hour: Int, val h24: Boolean? = null, val seed: Long? = null)
+data class WidgetDebug(
+    val condition: dev.amaan.amn.widgets.core.Condition,
+    val hour: Int,
+    val h24: Boolean? = null,
+    val seed: Long? = null,
+    /** Refresh button state to show: "idle", "busy", "done" or "offline". */
+    val refresh: String? = null,
+)
 
 /** Clock preview state: unsaved settings, plus optional lab overrides. */
 data class ClockPreview(

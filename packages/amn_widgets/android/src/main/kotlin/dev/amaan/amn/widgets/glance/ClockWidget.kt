@@ -28,6 +28,8 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import dev.amaan.amn.widgets.core.WidgetPalette
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.width
 import androidx.glance.layout.padding
@@ -144,7 +146,10 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     } else {
         ClockTimeline.phaseAt(now, zone, s.sun())
     }
-    val pal = Palettes.of(Condition.CLEAR, phase, context.isNightMode())
+    // With weather, the clock takes the weather widget's look: condition art and condition colors.
+    // Without it (switched off, or not fetched yet) it falls back to the sky for the time of day.
+    val sky = weather?.condition ?: Condition.CLEAR
+    val pal = Palettes.of(sky, phase, context.isNightMode())
     val ink = ColorProvider(Color(pal.ink))
     val offset = CityOffset.between(zone, ZoneId.systemDefault(), now).label
 
@@ -165,10 +170,10 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     val designTime = when (layout) {
         ClockLayout.TINY -> 23f
         ClockLayout.SQUARE -> 52f
-        ClockLayout.SMALL -> 36f
+        ClockLayout.SMALL -> 32f
     }
     val available = (layout.w - 24f) * fit.k
-    val timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
+    var timeSize = minOf(designTime * fit.k, available / timeWidthEm(pattern.substringBefore('\n')))
     val artSize = fit.k * when (layout) {
         ClockLayout.TINY -> 40f
         ClockLayout.SQUARE -> 88f
@@ -177,9 +182,20 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     val phaseLabel = when (phase) {
         Phase.DAWN -> "Dawn"; Phase.DAY -> "Day"; Phase.DUSK -> "Dusk"; Phase.NIGHT -> "Night"
     }
-    // By day the sun sits high in the corner; at dawn and dusk it sits half below the bottom edge.
-    val low = phase == Phase.DAWN || phase == Phase.DUSK
+    // A clear sky at dawn or dusk keeps the sun half below the bottom edge; everything else sits in the corner.
+    val low = (phase == Phase.DAWN || phase == Phase.DUSK) && sky == Condition.CLEAR
     fun style(sp: Float, weight: FontWeight) = TextStyle(color = ink, fontSize = fit.sp(sp).sp, fontWeight = weight)
+
+    // Spare height in a square clock becomes the next hours' weather, not a gap between the labels and the time.
+    val fontScale = context.resources.configuration.fontScale
+    val textLine = { sp: Float -> sp * fit.k * fontScale * 1.3f }
+    val usedHeight = 20 * fit.k + textLine(15f) + textLine(11.5f) + timeSize + textLine(11f)
+    val hoursHeight = HOURS_ROW_DP * minOf(fit.k, HOURS_MAX_K)
+    val hoursCount = if (size.width.value >= 250) 6 else 4
+    // The time may shrink by up to 30% to make room for the row; beyond that, no row.
+    val shortBy = hoursHeight + 8 * fit.k - (size.height.value - usedHeight)
+    val showHours = square && weather != null && shortBy <= timeSize * .3f
+    if (showHours && shortBy > 0) timeSize -= shortBy
 
     Box(
         modifier = GlanceModifier.fillMaxSize()
@@ -191,6 +207,16 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         if (low) {
             val sun = Horizon.topHalf(context, Art.drawable(Condition.CLEAR, phase))
             Image(ImageProvider(sun), null, GlanceModifier.width((artSize * .8f).dp).height((artSize * .8f * .55f).dp))
+        } else if (weather != null) {
+            // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
+            val z = artSize * .8f
+            val roomy = backdropArt(layout, size)
+            if (roomy != null) {
+                // A big backdrop that runs off the top-right corner; the time may overlap its edge.
+                BleedArt(Art.drawable(sky, phase), roomy.size, bleedRight = roomy.size * roomy.bleedRight, bleedTop = roomy.size * roomy.bleedTop)
+            } else {
+                BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
+            }
         } else {
             // Runs off the top-right corner by a fifth, as in the design.
             BleedArt(Art.drawable(Condition.CLEAR, phase), artSize, bleedRight = artSize * .2f, bleedTop = artSize * .2f)
@@ -201,7 +227,7 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
             if (square) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(phaseLabel, style = style(11.5f, FontWeight.Medium))
-                    if (weather != null) WeatherBit(weather, units, phase, fit, ::style, 11.5f)
+                    if (weather != null) WeatherBit(weather, units, ::style, 11.5f)
                 }
             }
             Spacer(GlanceModifier.defaultWeight())
@@ -227,19 +253,66 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(offset, style = style(if (square) 11f else 10.5f, FontWeight.Medium), maxLines = 1)
                     // 2×1 has no line under the city, so its weather sits next to the offset.
-                    if (!square && weather != null) WeatherBit(weather, units, phase, fit, ::style, 10.5f)
+                    if (!square && weather != null) WeatherBit(weather, units, ::style, 10.5f)
                 }
+            }
+            if (showHours && weather != null) {
+                Spacer(GlanceModifier.height(k(8f)))
+                ClockHours(weather, units, pal, Fit(minOf(fit.k, HOURS_MAX_K)), s.h24, hoursCount)
             }
         }
     }
 }
 
-/** " · [icon] 13°": the city's current condition and temperature, after another label. */
+/** How much of a square clock's backdrop runs off the top and right edges. */
+private const val ROOMY_BLEED = .12f
+
+/** A backdrop image's size (dp) and the share of it that runs off the right and top edges. */
+private data class RoomyArt(val size: Float, val bleedRight: Float, val bleedTop: Float)
+
+/**
+ * Weather art as a backdrop, sized from the widget rather than the space left by the text: about the
+ * widget's height on wide clocks, about 60% of the width on square ones. It runs off the top-right
+ * corner, and the time and labels may overlap its edge. Null for the 1×1, which keeps the corner icon.
+ */
+private fun backdropArt(layout: ClockLayout, size: DpSize): RoomyArt? = when (layout) {
+    ClockLayout.SMALL -> RoomyArt(minOf(size.height.value * 1.15f, size.width.value * .6f), .16f, .14f)
+    ClockLayout.SQUARE -> RoomyArt(minOf(size.width.value * .58f, size.height.value * .62f), ROOMY_BLEED, ROOMY_BLEED)
+    ClockLayout.TINY -> null
+}
+
+/** Height of the clock's hours row at design scale. */
+private const val HOURS_ROW_DP = 50f
+
+/** The hours row grows with the widget only up to this scale, so it stays a supporting detail. */
+private const val HOURS_MAX_K = 1.25f
+
+/** The city's next hours (hour, condition, temperature) in a soft panel, like the weather widget's strip. [fit] is the row's own, capped scale. */
 @Composable
-private fun WeatherBit(f: Forecast, units: Units, phase: Phase, fit: Fit, style: (Float, FontWeight) -> TextStyle, sp: Float) {
-    Text(" · ", style = style(sp, FontWeight.Medium))
-    Image(ImageProvider(Art.drawable(f.condition, phase)), null, GlanceModifier.size(fit.dp(sp + 3f)))
-    Text(" ${units.temp(f.nowTempC)}°", style = style(sp, FontWeight.Bold), maxLines = 1)
+private fun ClockHours(f: Forecast, units: Units, pal: WidgetPalette, fit: Fit, h24: Boolean, count: Int) {
+    val k = fit::dp
+    val ink = ColorProvider(Color(pal.ink))
+    Row(
+        GlanceModifier.fillMaxWidth().height(k(HOURS_ROW_DP)).background(ColorProvider(Color(pal.ink).copy(alpha = .11f)))
+            .cornerRadius(k(14f)).padding(vertical = k(4f)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        f.hourly.drop(1).take(count).forEach { h ->
+            val phase = TimeOfDay.phase(h.hour * 60, f.sunriseMin, f.sunsetMin)
+            Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                val label = if (h24) "%02d".format(h.hour) else "${if (h.hour % 12 == 0) 12 else h.hour % 12} ${if (h.hour < 12) "AM" else "PM"}"
+                Text(label, style = TextStyle(color = ink, fontSize = fit.sp(9.5f).sp, fontWeight = FontWeight.Medium), maxLines = 1)
+                Image(ImageProvider(Art.drawable(h.condition, phase)), null, GlanceModifier.size(k(15f)))
+                Numeral("${units.temp(h.tempC)}°", 13 * fit.k, pal.ink)
+            }
+        }
+    }
+}
+
+/** " · 13°": the city's temperature after another label. The art already shows the condition. */
+@Composable
+private fun WeatherBit(f: Forecast, units: Units, style: (Float, FontWeight) -> TextStyle, sp: Float) {
+    Text(" · ${units.temp(f.nowTempC)}°", style = style(sp, FontWeight.Bold), maxLines = 1)
 }
 
 /** "NY" for New York, "TOK" for Tokyo: initials for several words, else the first three letters. */

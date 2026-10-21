@@ -36,6 +36,8 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   late String _zone = _pick(widget.query['city'], _clockCities.keys.toList(), 'Asia/Tokyo');
   late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both'], 'both');
   late bool _oneUi = widget.query['grid'] == 'oneui';
+  late final bool _showEngine = widget.query['engine'] != '0';
+  late String _refresh = _pick(widget.query['rf'], ['idle', 'busy', 'done', 'offline'], 'idle');
   // Same rotation as the widget: a new seed every two hours.
   late int _seed = int.tryParse(widget.query['seed'] ?? '') ?? DateTime.now().millisecondsSinceEpoch ~/ 7200000;
 
@@ -46,6 +48,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
         'hour': _hour.round(),
         'h24': _h24,
         'seed': _seed,
+        'refresh': _refresh,
         if (_dark != null) 'dark': _dark,
       };
 
@@ -112,7 +115,24 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               ChoiceChip(label: Text(k), selected: k == _kind, showCheckmark: false, onSelected: (_) => setState(() => _kind = k)),
             FilterChip(label: const Text('One UI grid'), selected: _oneUi, onSelected: (v) => setState(() => _oneUi = v)),
           ]),
-          if (_kind != 'clock')
+          const SizedBox(height: 6),
+          Row(children: [
+            const Text('Refresh  '),
+            Expanded(
+              child: SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: 'idle', label: Text('Idle')),
+                  ButtonSegment(value: 'busy', label: Text('Updating')),
+                  ButtonSegment(value: 'done', label: Text('Just now')),
+                  ButtonSegment(value: 'offline', label: Text('Offline')),
+                ],
+                selected: {_refresh},
+                onSelectionChanged: (v) => setState(() => _refresh = v.first),
+              ),
+            ),
+          ]),
+          if (_kind != 'clock' && _showEngine)
             SummaryEngine(
               condition: _condition,
               hour: h,

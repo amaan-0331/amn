@@ -34,6 +34,8 @@ const oneUiClockSizes = [
   PreviewSize('1×1', 100, 113, hostScale: .8333),
   PreviewSize('2×1', 200.5, 113, hostScale: .8333),
   PreviewSize('2×2', 200.5, 226, hostScale: .8333),
+  PreviewSize('3×2', 301, 226, hostScale: .8333),
+  PreviewSize('3×1', 301, 113, hostScale: .8333),
 ];
 
 const weatherSizes = [

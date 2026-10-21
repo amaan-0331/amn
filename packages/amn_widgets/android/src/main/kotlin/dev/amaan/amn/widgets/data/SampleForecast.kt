@@ -72,7 +72,8 @@ object SampleForecast {
             hourly = hourly,
             today = DayPoint(fx.conds[0], fx.hi, fx.lo, fx.todayPop, fx.todayMm, fx.todaySnowCm),
             yesterdayHighC = fx.yHi,
-            days = fx.days.mapIndexed { i, (c, hl, pop) ->
+            // Five days ahead: the fixture's three, then two milder ones.
+            days = (fx.days + listOf(d(Condition.PARTLY, fx.hi + 1, fx.lo + 1, 20), d(Condition.CLEAR, fx.hi + 2, fx.lo + 1, 0))).mapIndexed { i, (c, hl, pop) ->
                 DayPoint(c, hl.first, hl.second, pop, 0.0, weekday = today.plusDays(i + 1L).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH))
             },
             sunriseMin = 6 * 60 + 30,

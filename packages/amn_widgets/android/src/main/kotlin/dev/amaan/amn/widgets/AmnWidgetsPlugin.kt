@@ -153,7 +153,7 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                 val units = Units(fahrenheit = call.argument<Boolean>("fahrenheit") ?: false)
                 val f = SampleForecast.of(condition, hour)
                 val deg = { c: Double -> "${units.temp(c)}°" }
-                val sizes = listOf("2×1" to 17, "2×2" to 19, "4×2" to 22, "4×3 / 4×4" to 24)
+                val sizes = listOf("2×1" to 17, "2×2" to 16, "4×2" to 22, "4×3 / 4×4" to 24)
                 val detail = Summary.explain(f, h24, deg, 24, seed)
                 result.success(mapOf(
                     "seed" to seed,

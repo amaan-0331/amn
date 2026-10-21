@@ -6,3 +6,5 @@
 -keep class * extends androidx.work.ListenableWorker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
+# Glance creates widget action callbacks (the refresh button) by class name.
+-keep class * implements androidx.glance.appwidget.action.ActionCallback { <init>(); }

@@ -197,11 +197,11 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
         } else if (weather != null) {
             // Clouds and rain are taller than a plain sun, so weather art is drawn at 80% to stay clear of the time.
             val z = artSize * .8f
-            val whole = wholeArtSize(layout, size, fit, timeSize, pattern, z)
-            if (whole != null) {
-                // Enough room: show the whole asset, inset from the corner, instead of cropping it.
-                val top = if (layout == ClockLayout.SMALL) (size.height.value - whole) / 2 else 10 * fit.k
-                BleedArt(Art.drawable(sky, phase), whole, modifier = GlanceModifier.padding(top = top.dp, end = (10 * fit.k).dp))
+            val roomy = roomyArtSize(layout, size, fit, timeSize, pattern, z)
+            if (roomy != null) {
+                // Room to spare: a bigger image that runs just slightly off the top-right corner,
+                // so it fills the space without being cut off much.
+                BleedArt(Art.drawable(sky, phase), roomy, bleedRight = roomy * ROOMY_BLEED, bleedTop = roomy * ROOMY_BLEED)
             } else {
                 BleedArt(Art.drawable(sky, phase), z, bleedRight = z * .14f, bleedTop = z * .2f)
             }
@@ -248,23 +248,27 @@ private fun ClockContent(s: ClockSettings, appWidgetId: Int, debugHour: Int?, we
     }
 }
 
+/** How much of a roomy image runs off the top and right edges. */
+private const val ROOMY_BLEED = .12f
+
 /**
- * How big the weather art can be drawn whole, or null when it has to run off the corner.
- * 2×1-style layouts use the width beside the time; 2×2-style ones the height above it.
+ * The size for weather art when the clock has room to spare, or null when it's tight and the art
+ * should run off the corner as usual. Wide layouts use the width beside the time; 2×2-style ones
+ * the height above it. The image may poke [ROOMY_BLEED] past the top and right edges, so the
+ * visible part is what has to fit.
  */
-private fun wholeArtSize(layout: ClockLayout, size: DpSize, fit: Fit, timeSize: Float, pattern: String, z: Float): Float? {
+private fun roomyArtSize(layout: ClockLayout, size: DpSize, fit: Fit, timeSize: Float, pattern: String, z: Float): Float? {
     val pad = 12 * fit.k
+    val visible = 1 - ROOMY_BLEED
     return when (layout) {
         ClockLayout.SMALL -> {
-            val beside = size.width.value - pad * 2 - timeSize * timeWidthEm(pattern) - 8 * fit.k
-            if (beside >= z * .9f) minOf(beside, size.height.value * .78f, z * 1.6f) else null
+            val beside = size.width.value - pad - timeSize * timeWidthEm(pattern) - 10 * fit.k
+            if (beside >= z * .9f) minOf(beside / visible, size.height.value * 1.05f, z * 2f) else null
         }
         ClockLayout.SQUARE -> {
-            // Above the time and the offset line, beside the city and day/night labels. A whole image
-            // somewhat smaller than the cropped one still reads better than a cut-off one.
-            val above = size.height.value - pad * 2 - timeSize - 16 * fit.k
-            val beside = size.width.value * .5f
-            if (above >= z * .6f) minOf(above, beside, z * 1.4f) else null
+            // Above the time and the offset line; up to about 60% of the width, beside the city labels.
+            val above = size.height.value - pad - timeSize - 16 * fit.k
+            if (above >= z * .6f) minOf(above / visible, size.width.value * .6f, z * 1.8f) else null
         }
         ClockLayout.TINY -> null
     }

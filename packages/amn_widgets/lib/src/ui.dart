@@ -400,7 +400,7 @@ class PageTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text.toUpperCase(),
-        style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 28, letterSpacing: .2),
+        style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 28, letterSpacing: .2),
       );
 }
 

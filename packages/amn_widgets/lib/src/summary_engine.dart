@@ -95,7 +95,7 @@ class _SummaryEngineState extends State<SummaryEngine> {
         children: [
           Row(children: [
             const Text('SUMMARY ENGINE',
-                style: TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: .5)),
+                style: TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: .5)),
             const Spacer(),
             IconButton.filledTonal(icon: const Icon(Icons.chevron_left), tooltip: 'Previous line', onPressed: () => widget.onSeed(seed - 1)),
             Padding(
@@ -115,7 +115,7 @@ class _SummaryEngineState extends State<SummaryEngine> {
             child: Text(
               d?['text'] as String? ?? '…',
               key: ValueKey(d?['text']),
-              style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 34, height: 1.1),
+              style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 34, height: 1.1),
             ),
           ),
           if (winner != null)

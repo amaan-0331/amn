@@ -116,7 +116,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
           if (city != null) ...[
             GroupCard(children: [
               ListTile(
-                title: Text(city.name.toUpperCase(), style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 26)),
+                title: Text(city.name.toUpperCase(), style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 26)),
                 subtitle: Text([if (city.country.isNotEmpty) city.country, if (zone != null) zone.gmt].join(' · ')),
                 trailing: zone == null
                     ? null
@@ -124,7 +124,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(zone.time, style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 24)),
+                          Text(zone.time, style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_ui', fontWeight: FontWeight.w700, fontSize: 24)),
                           Text(zone.offset, style: theme.textTheme.bodySmall),
                         ],
                       ),

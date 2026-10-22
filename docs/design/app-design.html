@@ -68,7 +68,7 @@ td code{white-space:nowrap}
 <header>
   <span class="eyebrow">AMN · design system · spec</span>
   <h1>AMN Drift</h1>
-  <p class="lede">A drifting sky behind every screen, made from the 28 widget skies. Frosted glass sits on top, and the accent colour comes from the sky. This page holds the numbers; the motion itself lives in the app, in <code>packages/amn_ui</code>.</p>
+  <p class="lede">A drifting sky behind every screen, made from the 28 widget skies. Glass sits on top, and the text colour and accent both come from the sky. This page holds the numbers; the motion itself lives in the app, in <code>packages/amn_ui</code>.</p>
 </header>
 
 <section>
@@ -77,7 +77,8 @@ td code{white-space:nowrap}
     <div><b>Every screen uses the sky</b><span>Home shows it in full. Pages with a purpose (widget edit pages, the lab) mute it so they're easy to focus on.</span></div>
     <div><b>Icon: Drift</b><span>Three screen-blended orbs on a night gradient, plus a monochrome themed icon.</span></div>
     <div><b>Icons: Fluent UI System Icons</b><span><code>fluentui_system_icons</code>, 24 regular by default and filled for emphasis. No Material icons.</span></div>
-    <div><b>Grain breathes, never moves</b><span>A fixed noise texture whose strength fades in and out on an uneven rhythm.</span></div>
+    <div><b>Text follows the sky</b><span>Light or dark text, glass, icons and status bar come from how bright the sky is right now, not from the phone's dark mode. Dark mode only picks the set of skies.</span></div>
+    <div><b>No grain, for now</b><span>Removed. Glass is a plain tint, edge and highlight, and it never repaints while the sky moves.</span></div>
     <div><b>Fragment shader, not flutter_gpu</b><span>flutter_gpu is on stable only behind a flag, is still a preview, and has an open Android startup deadlock (flutter#193890). A runtime fragment shader covers a 2D sky.</span></div>
     <div><b>Greeting without a name</b><span>"Good evening", from the phone's clock.</span></div>
   </div>
@@ -85,9 +86,10 @@ td code{white-space:nowrap}
 
 <section>
   <h2>On the phone</h2>
-  <p class="lede">Release build on a Galaxy A55, dark mode.</p>
+  <p class="lede">Release build on a Galaxy A55. The two home screens are a minute apart: text, glass and accent follow the sky.</p>
   <div class="shots">
-    <figure><img src="art/screen-home.jpg" alt="Home: greeting, large time, date, a 'Drifting through rain by day' chip, then a Your widgets glass card and a Widget lab card over a purple drifting sky"><figcaption>Home · full sky</figcaption></figure>
+    <figure><img src="art/screen-home-bright.jpg" alt="Home over a bright snow-at-dawn sky: dark text, white glass cards and a red accent button"><figcaption>Home · bright sky, dark text</figcaption></figure>
+    <figure><img src="art/screen-home.jpg" alt="Home over a dark clear-night sky: light text, dark glass cards and a periwinkle accent button"><figcaption>Home · dark sky, light text</figcaption></figure>
     <figure><img src="art/screen-edit.jpg" alt="Weather widget edit page: glass band with the widget preview and size chips, location and units groups, Save button, over a dark muted sky"><figcaption>Edit page · muted sky</figcaption></figure>
     <figure><img src="art/screen-lab.jpg" alt="Widget lab: condition and option chips, segmented controls and the summary engine glass panel over a muted sky"><figcaption>Widget lab · muted sky</figcaption></figure>
   </div>
@@ -107,7 +109,7 @@ td code{white-space:nowrap}
     <div class="card"><h3>Crossfade</h3><p>Smoothstep between this sky and the next over the whole period, so a layer is always changing.</p></div>
     <div class="card"><h3>Orbits</h3><p>Each glow's x and y are two sines with unrelated periods (19–76 s). Its radius breathes between 0.42 and 0.68 of the long side.</p></div>
     <div class="card"><h3>Tilt</h3><p>Accelerometer delta from a slowly adapting rest pose, clamped to ±1. Offset = tilt × 0.07 × depth × screen, eased in at about 5 per second.</p></div>
-    <div class="card"><h3>Cost</h3><p>One full-screen shader pass at 30 fps from a timer, paused when the app is hidden. Dithered so the gradients don't band. Reduce motion freezes the sky and the tilt.</p></div>
+    <div class="card"><h3>Cost</h3><p>One full-screen shader pass at 30 fps (15 on muted pages), paused when the app is hidden. Dithered with interleaved gradient noise so gradients don't band. Reduce motion freezes the sky and the tilt.</p></div>
   </div>
   <h3>The 28 skies</h3>
   <div class="skies" id="skies"></div>
@@ -121,6 +123,7 @@ td code{white-space:nowrap}
     <tr><td>Saturation</td><td>100%</td><td>50% toward grey</td></tr>
     <tr><td>Tone</td><td>—</td><td>55% toward <span class="sw" style="background:#EEF0F6"></span><code>#EEF0F6</code> light, <span class="sw" style="background:#0B0C13"></span><code>#0B0C13</code> dark</td></tr>
     <tr><td>Drift speed</td><td>1×</td><td>0.4×</td></tr>
+    <tr><td>Frame rate</td><td>30 fps</td><td>15 fps</td></tr>
     <tr><td>Accent</td><td>Follows the sky</td><td>Holds still</td></tr>
     <tr><td>Change</td><td colspan="2">Eases over about 1 s (exponential, rate 3/s) in both directions</td></tr>
   </table></div>
@@ -128,9 +131,9 @@ td code{white-space:nowrap}
 
 <section>
   <h2>Glass</h2>
-  <p class="lede"><code>Glass</code>: blur σ 22 with 150% saturation (one shared backdrop group), then tint, grain, a 1 px edge and a top highlight that fades out by a third of the height (max 40 px). Turn the blur off for glass that only sits on the sky, where it can't be seen.</p>
+  <p class="lede"><code>Glass</code>: a tint, a 1 px edge and a top highlight that fades out by a third of the height (max 40 px). It's static, so the sky moving under it costs nothing. Blur (σ 22, 150% saturation) is opt-in, only for glass that content scrolls under. App bars use a near-solid tint when scrolled instead of a live blur.</p>
   <div class="tbl"><table>
-    <tr><th>Token</th><th>Light</th><th>Dark</th></tr>
+    <tr><th>Token</th><th>Bright sky</th><th>Dark sky</th></tr>
     <tr><td>Ink</td><td><span class="sw" style="background:#10131D"></span><code>#10131D</code></td><td><span class="sw" style="background:#F2F3FA"></span><code>#F2F3FA</code></td></tr>
     <tr><td>Sub</td><td><span class="sw" style="background:#2E3446"></span><code>#2E3446</code></td><td><span class="sw" style="background:#C6CAD9"></span><code>#C6CAD9</code></td></tr>
     <tr><td>Tint</td><td><code>white 38%</code></td><td><code>#0A0C16 34%</code></td></tr>
@@ -138,19 +141,19 @@ td code{white-space:nowrap}
     <tr><td>Highlight</td><td><code>white 70%</code></td><td><code>white 18%</code></td></tr>
     <tr><td>Divider</td><td><code>ink 10%</code></td><td><code>white 10%</code></td></tr>
     <tr><td>Unselected chip / segment</td><td><code>tint</code></td><td><code>white 7%</code></td></tr>
-    <tr><td>Grain peak</td><td><code>0.12</code></td><td><code>0.16</code></td></tr>
+    <tr><td>App bar, scrolled</td><td><code>#EEF0F6 90%</code></td><td><code>#111320 90%</code></td></tr>
     <tr><td>Radius</td><td colspan="2">Cards 26, groups 22, preview band 28, chips 999</td></tr>
   </table></div>
   <div class="grid">
-    <div class="card"><h3>Grain</h3><p>A 96 px grey noise tile made once at startup, shown at 72 logical px with overlay blend. It never moves.</p></div>
-    <div class="card"><h3>Breathing</h3><p>strength = 0.15 + 0.85 × mix of sin(t / 7.3 s) at 0.6 and sin(t / 11.9 s) at 0.4. It fades in and out unevenly, from barely there to fully there. Fixed at 0.6 with reduce motion.</p></div>
+    <div class="card"><h3>Bright or dark sky</h3><p>15 points across the screen are sampled the same way the shader paints them, including the mute, and their relative luminance is averaged. Text turns dark above 0.24 and light again below 0.14; the gap stops it flickering.</p></div>
+    <div class="card"><h3>Switching</h3><p>Text, glass and accent blend over 1.2 s. In the first second after launch they snap instead, and a page open from launch (a widget's edit page) starts muted, so nothing changes as it appears.</p></div>
   </div>
 </section>
 
 <section>
   <h2>Accent and type</h2>
   <div class="grid">
-    <div class="card"><h3>Accent from the sky</h3><p>Near glow's top colour → HSL, saturation at least 0.55, lightness 0.40 (light) or 0.72 (dark). Text on it is <code>#FFFFFF</code> or <code>#11131C</code>. It updates only when the hue moves 14° or more, and the theme blends over 1.6 s.</p></div>
+    <div class="card"><h3>Accent from the sky</h3><p>Near glow's top colour → HSL, saturation at least 0.55, lightness 0.40 (bright sky) or 0.72 (dark sky). Text on it is <code>#FFFFFF</code> or <code>#11131C</code>. It updates only when the hue moves 20° or more, at most every 6 s, and blends over 1.2 s. The colour scheme is built by hand from it (not <code>fromSeed</code>) and cached, so a change costs little.</p></div>
     <div class="card"><h3>Page transitions</h3><p>Pages are see-through, so they fade instead of sliding: the new page fades in and rises 2.5% (420 ms, ease-out cubic) while the old one fades out in the first 60%.</p></div>
   </div>
   <div class="type">
@@ -173,6 +176,18 @@ td code{white-space:nowrap}
 </section>
 
 <section>
+  <h2>Performance</h2>
+  <p class="lede">Measured on a Galaxy A55 (120 Hz, so 8.3 ms per frame) in a release build. Raster is GPU time per frame, median / 90th percentile.</p>
+  <div class="tbl"><table>
+    <tr><th>Screen</th><th>Before</th><th>After</th></tr>
+    <tr><td>Home, idle</td><td>4.6 / 6.7 ms</td><td>3.2 / 4.1 ms</td></tr>
+    <tr><td>Widget lab, scrolling</td><td>7.5–16 / 15–17 ms</td><td>2.6–2.9 / 4–8.6 ms</td></tr>
+    <tr><td>Build (UI thread), idle</td><td>2–4 ms</td><td>0.5 ms</td></tr>
+  </table></div>
+  <p>Gone: grain repainting every glass surface 30 times a second, live blurs redone under the moving sky, <code>fromSeed</code> on every accent change, a <code>sin</code> per pixel in the shader, and a theme switch as edit pages opened. Still to watch: the lab's first scroll, while its native widget previews are created. To measure again, build with <code>--dart-define=PERF=true</code> and read <code>[perf]</code> lines in logcat (<code>lib/perf_probe.dart</code>).</p>
+</section>
+
+<section>
   <h2>In the code</h2>
   <div class="tbl"><table>
     <tr><th>Piece</th><th>Where</th></tr>
@@ -180,7 +195,7 @@ td code{white-space:nowrap}
     <tr><td>Controller, scope, mute, sky painter</td><td><code>packages/amn_ui/lib/src/drift.dart</code></td></tr>
     <tr><td>Shader</td><td><code>packages/amn_ui/shaders/drift.frag</code></td></tr>
     <tr><td>Tilt</td><td><code>packages/amn_ui/lib/src/tilt.dart</code> (sensors_plus)</td></tr>
-    <tr><td>Glass, grain, glass app bar</td><td><code>packages/amn_ui/lib/src/glass.dart</code></td></tr>
+    <tr><td>Glass, app bar background</td><td><code>packages/amn_ui/lib/src/glass.dart</code></td></tr>
     <tr><td>Theme, tokens, type, transitions</td><td><code>packages/amn_ui/lib/src/theme.dart</code></td></tr>
     <tr><td>Home</td><td><code>lib/home_page.dart</code>; placed widgets come from <code>listWidgets</code> on the <code>amn/widgets</code> channel</td></tr>
   </table></div>

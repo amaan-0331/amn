@@ -3,17 +3,19 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'skies.dart';
 import 'tilt.dart';
 
 /// Runs the drift for the whole app: the sky's clock, the tilt, how muted the
-/// sky is, the grain's breathing and the accent picked from the near glow.
+/// sky is, whether text over it should be light or dark, and the accent
+/// picked from the near glow.
 ///
-/// Painting listens to [frame] (about 30 times a second); widgets that only
-/// care about the accent or the sky's name listen to the controller itself,
-/// which notifies only when those change.
+/// Painting listens to [frame] (30 times a second, 15 on muted pages);
+/// widgets that care about [theme], the accent or the sky's name listen to
+/// the controller itself, which notifies only when those change.
 class DriftController extends ChangeNotifier {
   DriftController({Brightness brightness = Brightness.light, bool reduceMotion = false})
       // ignore: prefer_initializing_formals
@@ -23,10 +25,15 @@ class DriftController extends ChangeNotifier {
         // Start somewhere new each launch.
         _t = (DateTime.now().millisecondsSinceEpoch / 1000) % 100000 {
     _compute();
+    _theme = _luminance() > _flip ? Brightness.light : Brightness.dark;
     _publish(force: true);
   }
 
   static const _fps = 30;
+
+  // Text flips to dark over a sky brighter than _toLight and back to light
+  // under _toDark (relative luminance). The gap keeps it from flickering.
+  static const _flip = .19, _toLight = .24, _toDark = .14;
   static const _parallax = .07;
 
   /// Ticks whenever the sky should repaint.
@@ -36,6 +43,8 @@ class DriftController extends ChangeNotifier {
   final _clock = Stopwatch();
   Timer? _timer;
   double _last = 0;
+  bool _odd = false;
+  double _accentAt = -1e9;
 
   double _t;
   Brightness _brightness;
@@ -44,14 +53,26 @@ class DriftController extends ChangeNotifier {
   double _mute = 0;
   Offset _tiltNow = Offset.zero;
 
-  /// Grain strength between 0 and 1; breathes in and out, never moves.
-  double grain = .6;
+  late Brightness _theme;
+
+  /// False for the first second after launch, while nothing is on screen
+  /// yet: theme changes then should snap rather than animate.
+  bool get settled => _clock.elapsedMilliseconds > 1000;
+
+  /// Height / width of the sky, set by its painter; used to sample it.
+  double aspect = 2.17;
 
   late SkyFrame sky;
   late Color accent;
   late Sky current;
 
+  /// The phone's dark mode: picks the light or the darkened set of skies.
   Brightness get brightness => _brightness;
+
+  /// What the UI over the sky should be: [Brightness.dark] means a dark sky
+  /// under light text, [Brightness.light] a bright sky under dark text.
+  Brightness get theme => _theme;
+
   double get mute => _mute;
 
   set brightness(Brightness b) {
@@ -74,7 +95,18 @@ class DriftController extends ChangeNotifier {
   }
 
   /// Pages with a purpose mute the sky while they're open; see [DriftMute].
-  void muteIn() => _muters++;
+  /// A page that's open from launch (a widget's edit page) starts muted.
+  void muteIn() {
+    _muters++;
+    if (!settled) {
+      _mute = 1;
+      _compute();
+      _theme = _luminance() > _flip ? Brightness.light : Brightness.dark;
+      _publish(force: true);
+      notifyListeners();
+    }
+  }
+
   void muteOut() => _muters = math.max(0, _muters - 1);
 
   void start() {
@@ -93,6 +125,9 @@ class DriftController extends ChangeNotifier {
   }
 
   void _tick() {
+    // Muted pages barely move, so they get every other frame.
+    _odd = !_odd;
+    if (_mute > .99 && _muters > 0 && _odd) return;
     final now = _clock.elapsedMicroseconds / 1e6;
     final dt = math.min(now - _last, .25);
     _last = now;
@@ -105,18 +140,10 @@ class DriftController extends ChangeNotifier {
       // Muted pages drift at 40% speed too.
       _t += dt * (1 - .6 * _mute);
       _tiltNow += (_tilt.value - _tiltNow) * (1 - math.exp(-dt * 5));
-      grain = _breath(now);
     }
     _compute();
     _publish();
     _paint();
-  }
-
-  // Two slow sines with unrelated periods: the grain fades in and out on an
-  // uneven rhythm, between barely there and fully there.
-  static double _breath(double s) {
-    final w = .6 * math.sin(2 * math.pi * s / 7.3) + .4 * math.sin(2 * math.pi * s / 11.9 + 1);
-    return .15 + .85 * (w + 1) / 2;
   }
 
   void _compute() {
@@ -145,13 +172,22 @@ class DriftController extends ChangeNotifier {
 
   late LayerColor _near;
 
-  // The accent follows the near glow, but only in steps big enough to see,
-  // and holds still while a muted page is open so it stays easy to focus.
+  // Text and glass follow the sky's brightness. The accent follows the near
+  // glow, but only in steps big enough to see and at most every 6 s, and
+  // holds still on muted pages so they stay easy to focus.
   void _publish({bool force = false}) {
     var changed = false;
-    final next = accentFor(_near.top, _brightness);
-    if (force || (_mute < .5 && _hueGap(next, accent) >= 14)) {
+    final now = _clock.elapsedMicroseconds / 1e6;
+    final l = _luminance();
+    final flip = _theme == Brightness.dark ? l > _toLight : l < _toDark;
+    if (flip) {
+      _theme = _theme == Brightness.dark ? Brightness.light : Brightness.dark;
+      changed = true;
+    }
+    final next = accentFor(_near.top, _theme);
+    if (force || flip || (_mute < .5 && now - _accentAt >= 6 && _hueGap(next, accent) >= 20)) {
       accent = next;
+      _accentAt = now;
       changed = true;
     }
     if (force || _near.current != current) {
@@ -159,6 +195,40 @@ class DriftController extends ChangeNotifier {
       changed = true;
     }
     if (changed && !force) notifyListeners();
+  }
+
+  /// Average relative luminance of the sky, from a 3 × 5 grid of samples
+  /// worked out the same way the shader paints them.
+  double _luminance() {
+    var sum = 0.0;
+    for (var y = 0; y < 5; y++) {
+      for (var x = 0; x < 3; x++) {
+        sum += _sample((x + .5) / 3, (y + .5) / 5).computeLuminance();
+      }
+    }
+    return sum / 15;
+  }
+
+  Color _sample(double u, double v) {
+    final s = sky;
+    final py = v * aspect, dy = aspect;
+    final t = ((u * .27 + py * dy) / (.27 * .27 + dy * dy)).clamp(0.0, 1.0);
+    var c = mix(s.base.top, s.base.bottom, t);
+    final m = math.max(1.0, aspect);
+    for (final g in s.glows) {
+      final d = (math.sqrt(math.pow(u - g.center.dx, 2) + math.pow(py - g.center.dy * aspect, 2)) / (g.radius * m)).clamp(0.0, 1.0);
+      final inner = d < .55;
+      final k = inner ? d / .55 : (d - .55) / .45;
+      final col = inner ? mix(g.inner, g.outer, k) : g.outer;
+      final a = inner ? .85 + (.38 - .85) * k : .38 * (1 - k);
+      c = mix(c, col, a);
+    }
+    if (s.mute > 0) {
+      final lum = .2126 * c.r + .7152 * c.g + .0722 * c.b;
+      c = mix(c, Color.from(alpha: 1, red: lum, green: lum, blue: lum), .5 * s.mute);
+      c = mix(c, s.tone, .55 * s.mute);
+    }
+    return c;
   }
 
   static double _hueGap(Color a, Color b) {
@@ -336,6 +406,7 @@ class _SkyPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = drift.sky;
+    if (size.width > 0) drift.aspect = size.height / size.width;
     final rect = Offset.zero & size;
     final m = math.max(size.width, size.height);
     final shader = this.shader;
@@ -383,8 +454,11 @@ class DriftBackground extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Stack(
-        fit: StackFit.expand,
-        children: [const DriftSky(), BackdropGroup(child: child)],
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: Drift.of(context).theme == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [const DriftSky(), BackdropGroup(child: child)],
+        ),
       );
 }

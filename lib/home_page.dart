@@ -145,7 +145,6 @@ class _SkyChip extends StatelessWidget {
     final g = AmnGlass.of(context);
     return Glass(
       radius: 999,
-      blur: false,
       padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -186,7 +185,6 @@ class _WidgetsCard extends StatelessWidget {
     final g = AmnGlass.of(context);
     final list = placed?.widgets ?? const <PlacedWidget>[];
     return Glass(
-      blur: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -273,7 +271,6 @@ class _LabCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final g = AmnGlass.of(context);
     return Glass(
-      blur: false,
       padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       child: Row(
         children: [

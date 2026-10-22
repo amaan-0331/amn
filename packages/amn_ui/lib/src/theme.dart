@@ -1,10 +1,12 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'skies.dart';
 
-/// Glass and ink colours for one brightness. Read with [AmnGlass.of].
+/// Glass and ink colours: [light] over a bright sky (dark text, white glass),
+/// [dark] over a dark one. Read with [AmnGlass.of].
 @immutable
 class AmnGlass extends ThemeExtension<AmnGlass> {
   const AmnGlass({
@@ -14,7 +16,7 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
     required this.edge,
     required this.highlight,
     required this.divider,
-    required this.grain,
+    required this.bar,
   });
 
   static const light = AmnGlass(
@@ -24,7 +26,7 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
     edge: Color(0x8CFFFFFF),
     highlight: Color(0xB3FFFFFF),
     divider: Color(0x1A10131D),
-    grain: .12,
+    bar: Color(0xE6EEF0F6),
   );
 
   static const dark = AmnGlass(
@@ -34,7 +36,7 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
     edge: Color(0x24FFFFFF),
     highlight: Color(0x2EFFFFFF),
     divider: Color(0x1AFFFFFF),
-    grain: .16,
+    bar: Color(0xE6111320),
   );
 
   /// Blur 22 and saturation 150%, shared by every glass surface.
@@ -59,14 +61,27 @@ class AmnGlass extends ThemeExtension<AmnGlass> {
   final Color highlight;
   final Color divider;
 
-  /// Peak grain opacity; the grain breathes between about 15% and 100% of it.
-  final double grain;
+  /// App bars once something scrolls under them.
+  final Color bar;
 
   @override
   AmnGlass copyWith() => this;
 
+  // Smooth, so text and glass cross-fade when the sky turns light or dark.
   @override
-  AmnGlass lerp(AmnGlass? other, double t) => t < .5 || other == null ? this : other;
+  AmnGlass lerp(AmnGlass? other, double t) {
+    if (other == null) return this;
+    Color l(Color a, Color b) => Color.lerp(a, b, t)!;
+    return AmnGlass(
+      ink: l(ink, other.ink),
+      sub: l(sub, other.sub),
+      tint: l(tint, other.tint),
+      edge: l(edge, other.edge),
+      highlight: l(highlight, other.highlight),
+      divider: l(divider, other.divider),
+      bar: l(bar, other.bar),
+    );
+  }
 }
 
 /// Display type: Barlow Condensed Bold, the widgets' numerals.
@@ -84,16 +99,50 @@ abstract final class AmnType {
 }
 
 abstract final class AmnTheme {
+  static final _cache = <(Brightness, Color), ThemeData>{};
+
+  /// The theme for UI over the sky. [brightness] is the sky's, from
+  /// [DriftController.theme], not the phone's dark mode.
   static ThemeData build(Brightness brightness, Color accent) {
-    final g = brightness == Brightness.dark ? AmnGlass.dark : AmnGlass.light;
-    final scheme = ColorScheme.fromSeed(seedColor: accent, brightness: brightness).copyWith(
+    if (_cache.length > 8) _cache.clear();
+    return _cache[(brightness, accent)] ??= _build(brightness, accent);
+  }
+
+  static ThemeData _build(Brightness brightness, Color accent) {
+    final dark = brightness == Brightness.dark;
+    final g = dark ? AmnGlass.dark : AmnGlass.light;
+    final on = onAccent(brightness);
+    // Built by hand: ColorScheme.fromSeed is too slow to run each time the accent moves.
+    final surface = dark ? const Color(0xFF181A24) : const Color(0xFFF4F5FA);
+    Color s(double k) => Color.lerp(surface, g.ink, k)!;
+    final scheme = ColorScheme(
+      brightness: brightness,
       primary: accent,
-      onPrimary: onAccent(brightness),
-      onSurface: g.ink,
-      onSurfaceVariant: g.sub,
-      outlineVariant: g.divider,
+      onPrimary: on,
+      primaryContainer: accent.withValues(alpha: .26),
+      onPrimaryContainer: g.ink,
+      secondary: accent,
+      onSecondary: on,
       secondaryContainer: accent.withValues(alpha: .26),
       onSecondaryContainer: g.ink,
+      tertiary: accent,
+      onTertiary: on,
+      error: dark ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A),
+      onError: dark ? const Color(0xFF690005) : Colors.white,
+      surface: surface,
+      onSurface: g.ink,
+      onSurfaceVariant: g.sub,
+      surfaceContainerLowest: s(0),
+      surfaceContainerLow: s(.03),
+      surfaceContainer: s(.05),
+      surfaceContainerHigh: s(.08),
+      surfaceContainerHighest: s(.11),
+      outline: g.sub.withValues(alpha: .6),
+      outlineVariant: g.divider,
+      inverseSurface: g.ink,
+      onInverseSurface: surface,
+      inversePrimary: accent,
+      surfaceTint: Colors.transparent,
     );
     // Unselected chips and segments: dark glass is too heavy at that size.
     final control = brightness == Brightness.dark ? const Color(0x12FFFFFF) : g.tint;
@@ -112,11 +161,12 @@ abstract final class AmnTheme {
         headlineSmall: AmnType.display(24, color: g.ink),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.scrolledUnder) ? g.tint : Colors.transparent),
+        backgroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.scrolledUnder) ? g.bar : Colors.transparent),
         foregroundColor: g.ink,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        systemOverlayStyle: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
       dividerTheme: DividerThemeData(color: g.divider, space: 1, thickness: 1),
       listTileTheme: ListTileThemeData(iconColor: g.sub, subtitleTextStyle: text.bodyMedium?.copyWith(color: g.sub)),
@@ -124,8 +174,8 @@ abstract final class AmnTheme {
         style: ButtonStyle(
           side: WidgetStatePropertyAll(BorderSide(color: g.edge)),
           backgroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? accent : control),
-          foregroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? onAccent(brightness) : g.ink),
-          iconColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? onAccent(brightness) : g.ink),
+          foregroundColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? on : g.ink),
+          iconColor: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? on : g.ink),
         ),
       ),
       chipTheme: ChipThemeData(

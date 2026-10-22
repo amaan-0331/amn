@@ -1,14 +1,13 @@
-import 'dart:async';
-
 import 'package:amn_ui/amn_ui.dart';
 import 'package:amn_widgets/amn_widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'home_page.dart';
+import 'perf_probe.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  unawaited(Grain.load());
+  startPerfProbe();
   runApp(const DriftScope(child: AmnApp()));
 }
 
@@ -22,13 +21,15 @@ class AmnApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Drift.of(context).accent;
+    final drift = Drift.of(context);
+    // Light or dark follows the sky behind the UI, not the phone's setting.
+    final theme = AmnTheme.build(drift.theme, drift.accent);
     return MaterialApp(
       title: 'AMN',
-      theme: AmnTheme.build(Brightness.light, accent),
-      darkTheme: AmnTheme.build(Brightness.dark, accent),
-      // The accent follows the sky; let it glide rather than jump.
-      themeAnimationDuration: const Duration(milliseconds: 1600),
+      theme: theme,
+      darkTheme: theme,
+      // Text and accent follow the sky; let them glide rather than jump.
+      themeAnimationDuration: drift.settled ? const Duration(milliseconds: 1200) : Duration.zero,
       builder: (context, child) => DriftBackground(child: child!),
       onGenerateRoute: _route,
       // One route only: the default would also push '/' and '/widget' under '/widget/weather?...'.

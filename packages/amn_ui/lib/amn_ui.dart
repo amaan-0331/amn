@@ -4,6 +4,6 @@
 library;
 
 export 'src/drift.dart' show Drift, DriftBackground, DriftController, DriftMute, DriftScope, DriftSky;
-export 'src/glass.dart' show Glass, GlassBar, Grain;
+export 'src/glass.dart' show Glass, GlassBar;
 export 'src/skies.dart' show Sky, Skies;
 export 'src/theme.dart' show AmnGlass, AmnTheme, AmnType, DriftPageTransitionsBuilder;

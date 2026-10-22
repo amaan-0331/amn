@@ -43,8 +43,9 @@ vec3 glow(vec3 color, vec2 p, vec3 g, vec3 inner, vec3 outer) {
   return mix(color, c, a);
 }
 
-float hash(vec2 p) {
-  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+// Interleaved gradient noise: a cheap, even dither (no sin per pixel).
+float ign(vec2 p) {
+  return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
 }
 
 void main() {
@@ -61,6 +62,6 @@ void main() {
   c = mix(c, uTone, 0.55 * uMute);
 
   // Dither so slow gradients don't band.
-  c += (hash(p) - 0.5) / 255.0;
+  c += (ign(p) - 0.5) / 255.0;
   fragColor = vec4(c, 1.0);
 }

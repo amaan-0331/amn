@@ -1,3 +1,4 @@
+import 'package:amn_ui/amn_ui.dart';
 import 'package:flutter/material.dart';
 
 import 'summary_engine.dart';
@@ -79,7 +80,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   Widget build(BuildContext context) {
     final h = _hour.round();
     return Scaffold(
-      appBar: AppBar(title: const PageTitle('Widget lab')),
+      appBar: AppBar(flexibleSpace: const GlassBar(), title: const PageTitle('Widget lab')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
         children: [
@@ -132,7 +133,8 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               ),
             ),
           ]),
-          if (_kind != 'clock' && _showEngine)
+          if (_kind != 'clock' && _showEngine) ...[
+            const SizedBox(height: 20),
             SummaryEngine(
               condition: _condition,
               hour: h,
@@ -141,6 +143,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               seed: _seed,
               onSeed: (s) => setState(() => _seed = s),
             ),
+          ],
           if (_kind != 'clock')
             for (final s in _oneUi ? oneUiWeatherSizes : weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),
           if (_kind != 'weather')

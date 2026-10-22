@@ -1,13 +1,19 @@
 package dev.amaan.amn.widgets
 
 import android.app.Activity
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import dev.amaan.amn.widgets.config.PREVIEW_VIEW_TYPE
 import dev.amaan.amn.widgets.config.PreviewViewFactory
 import dev.amaan.amn.widgets.config.WidgetConfigActivity
 import dev.amaan.amn.widgets.core.CityOffset
 import dev.amaan.amn.widgets.core.Condition
+import dev.amaan.amn.widgets.core.Forecast
+import dev.amaan.amn.widgets.core.ForecastBuilder
+import dev.amaan.amn.widgets.core.RawForecast
 import dev.amaan.amn.widgets.core.Summary
 import dev.amaan.amn.widgets.data.SampleForecast
 import dev.amaan.amn.widgets.data.ClockSchedule
@@ -20,7 +26,9 @@ import dev.amaan.amn.widgets.data.Units
 import dev.amaan.amn.widgets.data.WeatherSettings
 import dev.amaan.amn.widgets.data.WidgetStore
 import dev.amaan.amn.widgets.glance.ClockWidget
+import dev.amaan.amn.widgets.glance.ClockWidgetReceiver
 import dev.amaan.amn.widgets.glance.WeatherWidget
+import dev.amaan.amn.widgets.glance.WeatherWidgetReceiver
 import dev.amaan.amn.widgets.glance.redraw
 import dev.amaan.amn.widgets.glance.redrawAll
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -115,6 +123,59 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                 }
             }
 
+            // The app's home: every placed widget, with what it currently shows.
+            "listWidgets" -> {
+                val mgr = AppWidgetManager.getInstance(appContext)
+                fun ids(receiver: Class<*>) = mgr.getAppWidgetIds(ComponentName(appContext, receiver)).sorted()
+                val now = Instant.now()
+                val forecasts = ForecastCache(appContext)
+                // Night where the widget is, not where the phone is.
+                fun night(raw: RawForecast, f: Forecast?): Boolean? {
+                    f ?: return null
+                    val t = ForecastBuilder.localNow(raw, now).toLocalTime()
+                    val min = t.hour * 60 + t.minute
+                    return min < f.sunriseMin || min >= f.sunsetMin
+                }
+                val weather = ids(WeatherWidgetReceiver::class.java).map { id ->
+                    val s = store.weather(id)
+                    val cached = forecasts.load(id)
+                    val live = cached?.let { ForecastBuilder.build(it.raw, now) }
+                    mapOf(
+                        "id" to id, "kind" to "weather",
+                        "place" to (forecasts.placeName(id) ?: if (s.useGps) null else s.cityName),
+                        "gps" to s.useGps,
+                        "tempC" to live?.nowTempC, "condition" to live?.condition?.name?.lowercase(),
+                        "night" to cached?.let { night(it.raw, live) },
+                        "fetchedAt" to forecasts.fetchedAt(id),
+                    )
+                }
+                val clockCache = ClockWeather.cache(appContext)
+                val clocks = ids(ClockWidgetReceiver::class.java).map { id ->
+                    val s = store.clock(id)
+                    val live = if (!s.showWeather) null else clockCache.load(id)?.let { ForecastBuilder.build(it.raw, now) }
+                        ?.takeIf { System.currentTimeMillis() - it.fetchedAtEpochMs < ClockWeather.MAX_AGE_MS }
+                    mapOf(
+                        "id" to id, "kind" to "clock",
+                        "place" to s.cityName, "timeZone" to s.timeZone,
+                        "tempC" to live?.nowTempC, "condition" to live?.condition?.name?.lowercase(),
+                    )
+                }
+                result.success(mapOf("widgets" to weather + clocks, "fahrenheit" to store.units().fahrenheit))
+            }
+
+            // Opens a placed widget's edit page on top of the app; back returns here.
+            "openEditor" -> {
+                val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
+                val host = activity ?: return result.error("activity", "no activity", null)
+                host.startActivity(
+                    Intent(host, WidgetConfigActivity::class.java)
+                        .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                        .putExtra(WidgetConfigActivity.EXTRA_KIND, call.argument<String>("kind") ?: "weather")
+                        .putExtra(WidgetConfigActivity.EXTRA_MODE, "edit"),
+                )
+                result.success(null)
+            }
+
             "cancel" -> {
                 result.success(null)
                 configActivity?.finishWith(false)
@@ -122,6 +183,15 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
 
             "refreshNow" -> {
                 val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
+                if (call.argument<String>("kind") == "clock") {
+                    // The clock's saved city; unsaved changes aren't fetched.
+                    scope.launch {
+                        ClockWeather.refresh(appContext, listOf(id))
+                        val cache = ClockWeather.cache(appContext)
+                        result.success(mapOf("fetchedAt" to cache.fetchedAt(id), "placeName" to cache.placeName(id)))
+                    }
+                    return
+                }
                 scope.launch {
                     WeatherRefresher.refresh(appContext, listOf(id))
                     val cache = ForecastCache(appContext)

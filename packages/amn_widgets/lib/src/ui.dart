@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:amn_ui/amn_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -123,7 +125,7 @@ class _WidgetPreviewState extends State<WidgetPreview> {
   }
 }
 
-/// Preview on a wallpaper-like band, with size chips underneath.
+/// Preview on a glass band over the sky (the sky stands in for the wallpaper), with size chips underneath.
 class PreviewBand extends StatelessWidget {
   const PreviewBand({super.key, required this.preview, required this.sizes, required this.selected, required this.onSelected, this.note});
 
@@ -135,20 +137,10 @@ class PreviewBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final onBand = dark ? const Color(0xFFECEEF4) : const Color(0xFF10131B);
-    return Container(
+    final onBand = AmnGlass.of(context).ink;
+    return Glass(
+      radius: 28,
       padding: const EdgeInsets.fromLTRB(12, 22, 12, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: dark
-              ? const [Color(0xFF1D2742), Color(0xFF1A1722), Color(0xFF3A2618)]
-              : const [Color(0xFFC3D3F2), Color(0xFFE2D6E4), Color(0xFFF1CFA9)],
-        ),
-      ),
       child: Column(
         children: [
           SizedBox(height: 290, child: Center(child: preview)),
@@ -195,7 +187,7 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// A rounded group of rows.
+/// A rounded glass group of rows.
 class GroupCard extends StatelessWidget {
   const GroupCard({super.key, required this.children});
 
@@ -203,13 +195,7 @@ class GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: children),
-    );
+    return Glass(radius: 22, child: Column(children: children));
   }
 }
 
@@ -300,9 +286,7 @@ class _CityPickerState extends State<CityPicker> {
       children: [
         SearchBar(
           hintText: widget.hint,
-          leading: const Icon(Icons.search),
-          elevation: const WidgetStatePropertyAll(0),
-          backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerLowest),
+          leading: const Icon(FluentIcons.search_24_regular),
           onChanged: _onChanged,
         ),
         if (body != null || (result?.cities.isNotEmpty ?? false)) ...[
@@ -316,7 +300,7 @@ class _CityPickerState extends State<CityPicker> {
                         title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(c.subtitle),
                         selected: _same(c, widget.selected),
-                        selectedTileColor: scheme.primaryContainer.withValues(alpha: .5),
+                        selectedTileColor: scheme.primary.withValues(alpha: .16),
                         trailing: _trailing(c, scheme),
                         onTap: () => widget.onSelected(c),
                       ),
@@ -328,7 +312,7 @@ class _CityPickerState extends State<CityPicker> {
   }
 
   Widget? _trailing(City c, ColorScheme scheme) {
-    final check = _same(c, widget.selected) ? Icon(Icons.check, color: scheme.primary) : null;
+    final check = _same(c, widget.selected) ? Icon(FluentIcons.checkmark_24_regular, color: scheme.primary) : null;
     final z = c.timeZone == null ? null : _zones[c.timeZone];
     if (!widget.showZones || z == null) return check;
     return Row(
@@ -367,7 +351,7 @@ class CloseButtonFor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-        icon: Icon(adding ? Icons.close : Icons.arrow_back),
+        icon: Icon(adding ? FluentIcons.dismiss_24_regular : FluentIcons.arrow_left_24_regular),
         tooltip: adding ? 'Close without adding' : 'Back',
         onPressed: WidgetBridge.cancel,
       );
@@ -400,7 +384,7 @@ class PageTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text.toUpperCase(),
-        style: const TextStyle(fontFamily: 'BarlowCondensed', package: 'amn_widgets', fontWeight: FontWeight.w700, fontSize: 28, letterSpacing: .2),
+        style: AmnType.display(28, letterSpacing: .2),
       );
 }
 

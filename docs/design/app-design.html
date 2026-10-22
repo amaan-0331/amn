@@ -1,0 +1,220 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>AMN Drift</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Roboto+Flex:opsz,wght@8..144,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* A static spec: decisions, numbers and tokens for the AMN Drift design system.
+   The motion lives in the app (packages/amn_ui), not here. */
+:root{
+  --bg:#EEF0F6; --surface:#FFFFFF; --surface-2:#F5F6FA; --ink:#11131C; --muted:#545B6E; --line:#D9DCE6;
+  --accent:#C2410C; --accent-ink:#FFFFFF;
+  --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
+  --f-body:'Roboto Flex',Roboto,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0C13; --surface:#14161F; --surface-2:#1B1E2A; --ink:#ECEEF5; --muted:#9AA1B4; --line:#262A38;
+  --accent:#FF8A5B; --accent-ink:#1A0B05; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0C13; --surface:#14161F; --surface-2:#1B1E2A; --ink:#ECEEF5; --muted:#9AA1B4; --line:#262A38;
+  --accent:#FF8A5B; --accent-ink:#1A0B05; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0}
+main{max-width:1040px;margin:0 auto;padding:0 16px 80px}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:.95;text-transform:uppercase;margin:0;text-wrap:balance}
+h1{font-size:clamp(56px,11vw,120px)}
+h2{font-size:clamp(30px,4.4vw,42px)}
+h3{font-size:20px;font-weight:700;letter-spacing:.02em;margin-bottom:8px}
+p{margin:0}
+code{font-family:var(--f-mono);font-size:.86em}
+a{color:var(--accent)}
+header{padding:56px 0 32px;display:grid;gap:14px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);font-size:17px;max-width:62ch}
+section{padding-block:44px;border-top:1px solid var(--line);display:grid;gap:18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.card p{color:var(--muted);font-size:14px}
+.dec{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.dec div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.dec b{display:block;font-size:14px}
+.dec span{color:var(--muted);font-size:13.5px}
+.shots{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+figure{margin:0;display:grid;gap:8px}
+figure img{width:100%;border-radius:22px;border:1px solid var(--line);display:block}
+figcaption{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--line);vertical-align:-2px;margin-right:6px}
+.skies{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.sky{height:64px;border-radius:12px;padding:8px;font-size:11px;font-weight:600;display:flex;align-items:flex-end;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+.icon{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.icon img{width:120px;height:120px}
+.mono{width:120px;height:120px;border-radius:50%;background:#DCE3F2;display:grid;place-items:center}
+.mono.dk{background:#1E2433}
+.type{display:grid;gap:10px}
+.type div{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.type small{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-width:170px}
+</style>
+<main>
+<header>
+  <span class="eyebrow">AMN · design system · spec</span>
+  <h1>AMN Drift</h1>
+  <p class="lede">A drifting sky behind every screen, made from the 28 widget skies. Glass sits on top, and the text colour and accent both come from the sky. This page holds the numbers; the motion itself lives in the app, in <code>packages/amn_ui</code>.</p>
+</header>
+
+<section>
+  <h2>Decisions</h2>
+  <div class="dec">
+    <div><b>Every screen uses the sky</b><span>Home shows it in full. Pages with a purpose (widget edit pages, the lab) mute it so they're easy to focus on.</span></div>
+    <div><b>Icon: Drift</b><span>Three screen-blended orbs on a night gradient, plus a monochrome themed icon.</span></div>
+    <div><b>Icons: Fluent UI System Icons</b><span><code>fluentui_system_icons</code>, 24 regular by default and filled for emphasis. No Material icons.</span></div>
+    <div><b>Text follows the sky</b><span>Light or dark text, glass, icons and status bar come from how bright the sky is right now, not from the phone's dark mode. Dark mode only picks the set of skies.</span></div>
+    <div><b>No grain, for now</b><span>Removed. Glass is a plain tint, edge and highlight, and it never repaints while the sky moves.</span></div>
+    <div><b>Fragment shader, not flutter_gpu</b><span>flutter_gpu is on stable only behind a flag, is still a preview, and has an open Android startup deadlock (flutter#193890). A runtime fragment shader covers a 2D sky.</span></div>
+    <div><b>Greeting without a name</b><span>"Good evening", from the phone's clock.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>On the phone</h2>
+  <p class="lede">Release build on a Galaxy A55. The two home screens are a minute apart: text, glass and accent follow the sky.</p>
+  <div class="shots">
+    <figure><img src="art/screen-home-bright.jpg" alt="Home over a bright snow-at-dawn sky: dark text, white glass cards and a red accent button"><figcaption>Home · bright sky, dark text</figcaption></figure>
+    <figure><img src="art/screen-home.jpg" alt="Home over a dark clear-night sky: light text, dark glass cards and a periwinkle accent button"><figcaption>Home · dark sky, light text</figcaption></figure>
+    <figure><img src="art/screen-edit.jpg" alt="Weather widget edit page: glass band with the widget preview and size chips, location and units groups, Save button, over a dark muted sky"><figcaption>Edit page · muted sky</figcaption></figure>
+    <figure><img src="art/screen-lab.jpg" alt="Widget lab: condition and option chips, segmented controls and the summary engine glass panel over a muted sky"><figcaption>Widget lab · muted sky</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>The sky</h2>
+  <p class="lede">Four layers each walk through the 28 skies on their own clock. The clocks share no common beat, and a seeded hash picks each next sky (never the one being left), so the sky never visibly loops. It starts somewhere new on each launch.</p>
+  <div class="tbl"><table>
+    <tr><th>Layer</th><th>Fades every</th><th>Tilt depth</th><th>Drawn as</th></tr>
+    <tr><td>Base</td><td>37 s</td><td>0</td><td>Linear wash from top-left toward (27% width, bottom)</td></tr>
+    <tr><td>Glow 1</td><td>29 s</td><td>0.4</td><td>Radial: inner 85% → outer 38% at 0.55 → 0 at the edge</td></tr>
+    <tr><td>Glow 2</td><td>23 s</td><td>0.7</td><td>Same, radius × 0.88</td></tr>
+    <tr><td>Glow 3 (near)</td><td>17 s</td><td>1.0</td><td>Same, radius × 0.76; its colour picks the accent</td></tr>
+  </table></div>
+  <div class="grid">
+    <div class="card"><h3>Crossfade</h3><p>Smoothstep between this sky and the next over the whole period, so a layer is always changing.</p></div>
+    <div class="card"><h3>Orbits</h3><p>Each glow's x and y are two sines with unrelated periods (19–76 s). Its radius breathes between 0.42 and 0.68 of the long side.</p></div>
+    <div class="card"><h3>Tilt</h3><p>Accelerometer delta from a slowly adapting rest pose, clamped to ±1. Offset = tilt × 0.07 × depth × screen, eased in at about 5 per second.</p></div>
+    <div class="card"><h3>Cost</h3><p>One full-screen shader pass at 30 fps (15 on muted pages), paused when the app is hidden. Dithered with interleaved gradient noise so gradients don't band. Reduce motion freezes the sky and the tilt.</p></div>
+  </div>
+  <h3>The 28 skies</h3>
+  <div class="skies" id="skies"></div>
+</section>
+
+<section>
+  <h2>Muted</h2>
+  <p class="lede">Wrap a page in <code>DriftMute</code> (the widget routes do this). While any muted page is open:</p>
+  <div class="tbl"><table>
+    <tr><th>Property</th><th>Full</th><th>Muted</th></tr>
+    <tr><td>Saturation</td><td>100%</td><td>50% toward grey</td></tr>
+    <tr><td>Tone</td><td>—</td><td>55% toward <span class="sw" style="background:#EEF0F6"></span><code>#EEF0F6</code> light, <span class="sw" style="background:#0B0C13"></span><code>#0B0C13</code> dark</td></tr>
+    <tr><td>Drift speed</td><td>1×</td><td>0.4×</td></tr>
+    <tr><td>Frame rate</td><td>30 fps</td><td>15 fps</td></tr>
+    <tr><td>Accent</td><td>Follows the sky</td><td>Holds still</td></tr>
+    <tr><td>Change</td><td colspan="2">Eases over about 1 s (exponential, rate 3/s) in both directions</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Glass</h2>
+  <p class="lede"><code>Glass</code>: a tint, a 1 px edge and a top highlight that fades out by a third of the height (max 40 px). It's static, so the sky moving under it costs nothing. Blur (σ 22, 150% saturation) is opt-in, only for glass that content scrolls under. App bars use a near-solid tint when scrolled instead of a live blur.</p>
+  <div class="tbl"><table>
+    <tr><th>Token</th><th>Bright sky</th><th>Dark sky</th></tr>
+    <tr><td>Ink</td><td><span class="sw" style="background:#10131D"></span><code>#10131D</code></td><td><span class="sw" style="background:#F2F3FA"></span><code>#F2F3FA</code></td></tr>
+    <tr><td>Sub</td><td><span class="sw" style="background:#2E3446"></span><code>#2E3446</code></td><td><span class="sw" style="background:#C6CAD9"></span><code>#C6CAD9</code></td></tr>
+    <tr><td>Tint</td><td><code>white 38%</code></td><td><code>#0A0C16 34%</code></td></tr>
+    <tr><td>Edge</td><td><code>white 55%</code></td><td><code>white 14%</code></td></tr>
+    <tr><td>Highlight</td><td><code>white 70%</code></td><td><code>white 18%</code></td></tr>
+    <tr><td>Divider</td><td><code>ink 10%</code></td><td><code>white 10%</code></td></tr>
+    <tr><td>Unselected chip / segment</td><td><code>tint</code></td><td><code>white 7%</code></td></tr>
+    <tr><td>App bar, scrolled</td><td><code>#EEF0F6 90%</code></td><td><code>#111320 90%</code></td></tr>
+    <tr><td>Radius</td><td colspan="2">Cards 26, groups 22, preview band 28, chips 999</td></tr>
+  </table></div>
+  <div class="grid">
+    <div class="card"><h3>Bright or dark sky</h3><p>15 points across the screen are sampled the same way the shader paints them, including the mute, and their relative luminance is averaged. Text turns dark above 0.24 and light again below 0.14; the gap stops it flickering.</p></div>
+    <div class="card"><h3>Switching</h3><p>Text, glass and accent blend over 1.2 s. In the first second after launch they snap instead, and a page open from launch (a widget's edit page) starts muted, so nothing changes as it appears.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Accent and type</h2>
+  <div class="grid">
+    <div class="card"><h3>Accent from the sky</h3><p>Near glow's top colour → HSL, saturation at least 0.55, lightness 0.40 (bright sky) or 0.72 (dark sky). Text on it is <code>#FFFFFF</code> or <code>#11131C</code>. It updates only when the hue moves 20° or more, at most every 6 s, and blends over 1.2 s. The colour scheme is built by hand from it (not <code>fromSeed</code>) and cached, so a change costs little.</p></div>
+    <div class="card"><h3>Page transitions</h3><p>Pages are see-through, so they fade instead of sliding: the new page fades in and rises 2.5% (420 ms, ease-out cubic) while the old one fades out in the first 60%.</p></div>
+  </div>
+  <div class="type">
+    <div><small>displayLarge · Barlow 96</small><span style="font:700 64px/0.9 var(--f-display)">21:24</span></div>
+    <div><small>headlineMedium · Barlow 30</small><span style="font:700 30px/1 var(--f-display)">WEATHER WIDGET</span></div>
+    <div><small>Value · Barlow 24</small><span style="font:700 24px/1 var(--f-display)">31°</span></div>
+    <div><small>Title · Roboto 15/700</small><span style="font-weight:700">Widget lab</span></div>
+    <div><small>Label · Roboto 11.5/700 +1</small><span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;color:var(--muted)">YOUR WIDGETS</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>App icon</h2>
+  <div class="icon">
+    <img src="art/amn-icon.png" alt="AMN icon: warm, cool and violet orbs overlapping on a night gradient, with fine grain">
+    <div class="mono"><svg width="80" height="80" viewBox="18 18 72 72" aria-label="Themed icon, light"><g fill="#2F3B5C" fill-opacity=".55"><circle cx="43.92" cy="46.8" r="19.48"/><circle cx="64.08" cy="61.2" r="19.48"/><circle cx="63.36" cy="41.76" r="11.81"/></g></svg></div>
+    <div class="mono dk"><svg width="80" height="80" viewBox="18 18 72 72" aria-label="Themed icon, dark"><g fill="#B9C6E6" fill-opacity=".55"><circle cx="43.92" cy="46.8" r="19.48"/><circle cx="64.08" cy="61.2" r="19.48"/><circle cx="63.36" cy="41.76" r="11.81"/></g></svg></div>
+  </div>
+  <p class="lede">An adaptive icon. All the art is in the background layer (the orbs are screen-blended onto the gradient), drawn by <code>tool/make_icon.py</code> at every density. The monochrome layer is three 55% discs inside the 66 dp safe circle.</p>
+</section>
+
+<section>
+  <h2>Performance</h2>
+  <p class="lede">Measured on a Galaxy A55 (120 Hz, so 8.3 ms per frame) in a release build. Raster is GPU time per frame, median / 90th percentile.</p>
+  <div class="tbl"><table>
+    <tr><th>Screen</th><th>Before</th><th>After</th></tr>
+    <tr><td>Home, idle</td><td>4.6 / 6.7 ms</td><td>3.2 / 4.1 ms</td></tr>
+    <tr><td>Widget lab, scrolling</td><td>7.5–16 / 15–17 ms</td><td>2.6–2.9 / 4–8.6 ms</td></tr>
+    <tr><td>Build (UI thread), idle</td><td>2–4 ms</td><td>0.5 ms</td></tr>
+  </table></div>
+  <p>Gone: grain repainting every glass surface 30 times a second, live blurs redone under the moving sky, <code>fromSeed</code> on every accent change, a <code>sin</code> per pixel in the shader, and a theme switch as edit pages opened. Still to watch: the lab's first scroll, while its native widget previews are created. To measure again, build with <code>--dart-define=PERF=true</code> and read <code>[perf]</code> lines in logcat (<code>lib/perf_probe.dart</code>).</p>
+</section>
+
+<section>
+  <h2>In the code</h2>
+  <div class="tbl"><table>
+    <tr><th>Piece</th><th>Where</th></tr>
+    <tr><td>Skies, drift maths, accent</td><td><code>packages/amn_ui/lib/src/skies.dart</code></td></tr>
+    <tr><td>Controller, scope, mute, sky painter</td><td><code>packages/amn_ui/lib/src/drift.dart</code></td></tr>
+    <tr><td>Shader</td><td><code>packages/amn_ui/shaders/drift.frag</code></td></tr>
+    <tr><td>Tilt</td><td><code>packages/amn_ui/lib/src/tilt.dart</code> (sensors_plus)</td></tr>
+    <tr><td>Glass, app bar background</td><td><code>packages/amn_ui/lib/src/glass.dart</code></td></tr>
+    <tr><td>Theme, tokens, type, transitions</td><td><code>packages/amn_ui/lib/src/theme.dart</code></td></tr>
+    <tr><td>Home</td><td><code>lib/home_page.dart</code>; placed widgets come from <code>listWidgets</code> on the <code>amn/widgets</code> channel</td></tr>
+  </table></div>
+</section>
+</main>
+<script>
+// Swatches only: the 28 skies, same table and rules as the widgets' Palettes.kt.
+const T={Clear:{day:['#FFD25A','#FF8F3A'],night:['#101B52','#2C2775'],dawn:['#FFB59A','#FFDFAE'],dusk:['#C2456B','#3E2A7A']},
+'Partly cloudy':{day:['#8CCBFF','#FFD889'],night:['#17265A','#3B4380']},Cloudy:{day:['#C9D3E2','#8E9DB5'],night:['#2C3446','#161B26']},
+Rain:{day:['#4E70AE','#2D4677'],night:['#1C2A48','#0B1324']},Storm:{day:['#4A3B7A','#1D1838'],night:['#1E1236','#08060F']},
+Snow:{day:['#EEF4FF','#BCD0EE'],night:['#2D3D63','#141E37']},Fog:{day:['#E2DCD1','#ADA699'],night:['#3B3934','#1E1C19']}};
+const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)),x=a=>'#'+a.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+const mix=(a,b,t)=>{const A=h(a),B=h(b);return x(A.map((v,i)=>v+(B[i]-v)*t));};
+let out='';
+for(const[c,p]of Object.entries(T))for(const ph of['dawn','day','dusk','night']){
+  let[t,b]=p[ph]||p.day;
+  if(!p[ph]&&ph==='dawn'){t=mix(t,'#FF9E7A',.38);b=mix(b,'#FFD9A8',.25);}
+  if(!p[ph]&&ph==='dusk'){t=mix(t,'#C2456B',.35);b=mix(b,'#3E2A7A',.45);}
+  out+=`<div class="sky" style="background:linear-gradient(165deg,${t},${b})">${c} · ${ph}</div>`;
+}
+document.getElementById('skies').innerHTML=out;
+</script>

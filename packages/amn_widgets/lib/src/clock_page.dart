@@ -21,10 +21,13 @@ class ClockConfigPage extends StatefulWidget {
 class _ClockConfigPageState extends State<ClockConfigPage> {
   bool _loaded = false;
   City? _city;
+  City? _savedCity;
   bool _h24 = true;
   bool _seconds = false;
   bool _showWeather = true;
   int? _weatherAt;
+  bool _refreshing = false;
+  int _revision = 0;
   PreviewSize _size = clockSizes[2];
   ZoneInfo? _zone;
   Timer? _tick;
@@ -62,6 +65,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
       _seconds = m['seconds'] as bool? ?? false;
       _showWeather = m['showWeather'] as bool? ?? true;
       _weatherAt = m['fetchedAt'] as int?;
+      _savedCity = _city;
       _loaded = true;
     });
     await _describe();
@@ -72,6 +76,20 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
     if (tz == null) return;
     final info = await WidgetBridge.describeZones([tz], h24: _h24);
     if (mounted) setState(() => _zone = info[tz]);
+  }
+
+  /// Refresh fetches the saved city, so it waits until a new city is saved.
+  bool get _citySaved => _city?.timeZone == _savedCity?.timeZone && _city?.name == _savedCity?.name;
+
+  Future<void> _refresh() async {
+    setState(() => _refreshing = true);
+    final m = await WidgetBridge.refreshNow(widget.widgetId, kind: 'clock');
+    if (!mounted) return;
+    setState(() {
+      _weatherAt = m['fetchedAt'] as int? ?? _weatherAt;
+      _refreshing = false;
+      _revision++;
+    });
   }
 
   void _select(City c) {
@@ -108,7 +126,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
         children: [
           PreviewBand(
-            preview: WidgetPreview(kind: 'clock', widgetId: widget.widgetId, size: _size, settings: _settings),
+            preview: WidgetPreview(kind: 'clock', widgetId: widget.widgetId, size: _size, settings: _settings, revision: _revision),
             sizes: clockSizes,
             selected: _size,
             onSelected: (s) => setState(() => _size = s),
@@ -152,9 +170,7 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
             ),
             SwitchListTile(
               title: const Text('Show weather'),
-              subtitle: Text(_showWeather && _weatherAt != null
-                  ? '${updatedLabel(_weatherAt)} · updates every hour · Open-Meteo'
-                  : "The city's weather art, colors and temperature · updates every hour"),
+              subtitle: const Text("The city's weather art, colors and temperature"),
               value: _showWeather,
               onChanged: (v) => setState(() => _showWeather = v),
             ),
@@ -165,6 +181,23 @@ class _ClockConfigPageState extends State<ClockConfigPage> {
               onChanged: (v) => setState(() => _seconds = v),
             ),
           ]),
+          if (!widget.adding && _showWeather && _savedCity != null) ...[
+            const SectionLabel('Data'),
+            GroupCard(children: [
+              ListTile(
+                title: Text(updatedLabel(_weatherAt)),
+                subtitle: Text(_citySaved
+                    ? 'Refreshes hourly · Open-Meteo'
+                    : 'Save to get the weather for ${city?.name ?? 'the new city'}'),
+                trailing: _refreshing
+                    ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
+                    : TextButton(
+                        onPressed: _citySaved ? _refresh : null,
+                        child: const Text('Refresh now'),
+                      ),
+              ),
+            ]),
+          ],
         ],
       ),
       bottomNavigationBar: BottomAction(

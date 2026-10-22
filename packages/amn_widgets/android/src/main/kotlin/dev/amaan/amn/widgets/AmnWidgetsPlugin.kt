@@ -183,6 +183,15 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
 
             "refreshNow" -> {
                 val id = call.argument<Int>("id") ?: return result.error("args", "id missing", null)
+                if (call.argument<String>("kind") == "clock") {
+                    // The clock's saved city; unsaved changes aren't fetched.
+                    scope.launch {
+                        ClockWeather.refresh(appContext, listOf(id))
+                        val cache = ClockWeather.cache(appContext)
+                        result.success(mapOf("fetchedAt" to cache.fetchedAt(id), "placeName" to cache.placeName(id)))
+                    }
+                    return
+                }
                 scope.launch {
                     WeatherRefresher.refresh(appContext, listOf(id))
                     val cache = ForecastCache(appContext)

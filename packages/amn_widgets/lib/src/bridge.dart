@@ -37,9 +37,10 @@ class WidgetBridge {
   static Future<void> save(int id, String kind, Map<String, Object?> settings) =>
       _channel.invokeMethod('save', {'id': id, 'kind': kind, 'settings': settings});
 
-  /// Fetches this widget's weather now. Returns the new fetch time and place name.
-  static Future<Map<String, Object?>> refreshNow(int id) async =>
-      await _channel.invokeMapMethod<String, Object?>('refreshNow', {'id': id}) ?? {};
+  /// Fetches this widget's weather now ([kind] 'weather' or 'clock', for its
+  /// saved city). Returns the new fetch time and place name.
+  static Future<Map<String, Object?>> refreshNow(int id, {String kind = 'weather'}) async =>
+      await _channel.invokeMapMethod<String, Object?>('refreshNow', {'id': id, 'kind': kind}) ?? {};
 
   /// Current time, offset from the phone ("+7h · tomorrow") and GMT label per IANA zone.
   static Future<Map<String, ZoneInfo>> describeZones(List<String> zones, {required bool h24}) async {

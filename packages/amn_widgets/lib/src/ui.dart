@@ -40,9 +40,10 @@ const oneUiClockSizes = [
   PreviewSize('3×1', 301, 113, hostScale: .8333),
 ];
 
-const oneUiPrayerSizes = [PreviewSize('4×1', 401, 113, hostScale: .8333)];
+const oneUiPrayerSizes = [PreviewSize('4×1', 401, 113, hostScale: .8333), PreviewSize('5×1', 501, 113, hostScale: .8333)];
 
-const prayerSizes = [PreviewSize('4×1', 358, 103)];
+/// Pixel's grid is four cells wide; 'wide' is a 4×1 stretched past 4:1, which takes the 5×1 layout.
+const prayerSizes = [PreviewSize('4×1', 358, 103), PreviewSize('wide', 448, 103)];
 
 const weatherSizes = [
   PreviewSize('2×1', 140, 70),

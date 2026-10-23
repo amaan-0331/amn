@@ -45,6 +45,7 @@ import dev.amaan.amn.widgets.R
 import dev.amaan.amn.widgets.core.PrayerDesign
 import dev.amaan.amn.widgets.core.PrayerMoment
 import dev.amaan.amn.widgets.core.PrayerPalette
+import dev.amaan.amn.widgets.core.PrayerTime
 import dev.amaan.amn.widgets.core.PrayerTimetable
 import dev.amaan.amn.widgets.core.Palettes
 import dev.amaan.amn.widgets.core.SkyLight
@@ -114,7 +115,7 @@ private fun PrayerContent() {
             .clickable(openPrayerPage(context)),
     ) {
         Image(ImageProvider(scene.bitmap), describe(moment, h24), GlanceModifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
-        Box(GlanceModifier.padding(start = (PrayerDesign.PAD * d).dp, top = (PrayerDesign.TOP * d).dp)) {
+        Box(GlanceModifier.padding(start = (PrayerDesign.PAD * d).dp, top = (scene.countdownTop * d).dp)) {
             Countdown(moment.next.at.toEpochMilli() - now.toEpochMilli(), 15 * d, Palettes.mix(pal.base.ink, pal.base.top, .12))
         }
     }
@@ -158,7 +159,8 @@ private fun openPrayerPage(context: Context): Action {
  * to the height so the text always fits; extra width goes to the sky between the grid and the mosque.
  */
 internal object PrayerArt {
-    class Scene(val bitmap: Bitmap, val unit: Float)
+    /** [countdownTop] is where the live countdown goes, in design units. */
+    class Scene(val bitmap: Bitmap, val unit: Float, val countdownTop: Float)
 
     private var barlow: Typeface? = null
     private val sans = Typeface.create("sans-serif", Typeface.NORMAL)
@@ -178,7 +180,7 @@ internal object PrayerArt {
 
         // Sky, then the light that follows the sun or moon.
         val orb = PrayerDesign.orb(m.orb, w).let { (x, y) -> x to y + (H - PrayerDesign.H) }
-        val light = SkyLight.of(m.sky).readable(p, PrayerDesign.orb(m.orb, w))
+        val light = SkyLight.of(m.sky).readable(p, PrayerDesign.orb(m.orb, w), w)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.shader = LinearGradient(0f, 0f, 0f, H, p.top, p.bottom, Shader.TileMode.CLAMP)
         c.drawRect(0f, 0f, w, H, paint)
@@ -215,8 +217,8 @@ internal object PrayerArt {
 
         // Text wears a soft halo of the sky behind it, so it stays clear where the sun or moon passes under it.
         val designOrb = PrayerDesign.orb(m.orb, w)
-        text(context, c, m, pal, h24) { x, y -> light.skyAt(p, x, y, designOrb) }
-        return Scene(bmp, u)
+        val countdownTop = text(context, c, m, pal, h24, w) { x, y -> light.skyAt(p, x, y, designOrb) }
+        return Scene(bmp, u, countdownTop)
     }
 
     private fun sun(c: Canvas, x: Float, y: Float) {
@@ -296,23 +298,46 @@ internal object PrayerArt {
         c.drawRoundRect(stick, 2f, 2f, paint)
     }
 
-    private fun text(context: Context, c: Canvas, m: PrayerMoment, pal: PrayerPalette, h24: Boolean, sky: (Float, Float) -> Int) {
+    /** Draws the text on a widget [w] units wide; returns the countdown's top, which the live Chronometer takes. */
+    private fun text(context: Context, c: Canvas, m: PrayerMoment, pal: PrayerPalette, h24: Boolean, w: Float, sky: (Float, Float) -> Int): Float {
         val ink = pal.base.ink
         val digits = barlow ?: context.resources.getFont(R.font.amn_barlow_condensed_bold).also { barlow = it }
         val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = digits }
         val label = Paint(Paint.ANTI_ALIAS_FLAG)
+        val gridX = PrayerDesign.gridX(w)
+        val (t, ap) = clock(m.next.hhmm, h24)
 
         // The countdown's line (18 units) is the live Chronometer laid over this spot.
-        var y = PrayerDesign.TOP + 19f
-        val (t, ap) = clock(m.next.hhmm, h24)
-        time(c, big, t, ap, PrayerDesign.PAD, y, 52f, 19f, ink, sky(PrayerDesign.PAD + 55, y + 26))
-        y += 52f + 1f
-        label.typeface = sansMedium
-        line(c, label, m.next.prayer.label, PrayerDesign.PAD, y, 23f, 24f, pal.accent, sky(PrayerDesign.PAD + 30, y + 12))
+        val countdownTop: Float
+        if (PrayerDesign.wide(w)) {
+            // "Maghrib 6:58 PM" on one line: the name in ink, the time in the accent. Sized once for the
+            // day so the widest of today's five fits beside the grid, and it doesn't change size at each prayer.
+            val room = gridX - PrayerDesign.WIDE_GAP - PrayerDesign.PAD
+            big.textSize = 100f
+            val widest = m.day.filter { it.prayer.isPrayer }.maxOf { pt -> nextWidth(big, pt, h24) }
+            val size = min(60f, room * 100f / widest)
+            countdownTop = PrayerDesign.countdownTop(w, size)
+            val top = countdownTop + 19f
+            val halo = sky((PrayerDesign.PAD + gridX) / 2, top + size / 2)
+            big.textSize = size
+            big.color = ink
+            big.setShadowLayer(size * .16f, 0f, 0f, halo)
+            val base = baseline(big, top, size)
+            c.drawText(m.next.prayer.label, PrayerDesign.PAD, base, big)
+            val x = PrayerDesign.PAD + big.measureText(m.next.prayer.label + " ")
+            time(c, big, t, ap, x, top, size, size * .37f, pal.accent, halo)
+        } else {
+            countdownTop = PrayerDesign.TOP
+            var y = PrayerDesign.TOP + 19f
+            time(c, big, t, ap, PrayerDesign.PAD, y, 52f, 19f, ink, sky(PrayerDesign.PAD + 55, y + 26))
+            y += 52f + 1f
+            label.typeface = sansMedium
+            line(c, label, m.next.prayer.label, PrayerDesign.PAD, y, 23f, 24f, pal.accent, sky(PrayerDesign.PAD + 30, y + 12))
+        }
 
         // The other five, in the day's order: three on top, two below. Those already past are faded.
         m.day.filter { it.prayer != m.next.prayer }.forEachIndexed { i, pt ->
-            val x = PrayerDesign.GRID_X + (i % 3) * (PrayerDesign.CELL_W + PrayerDesign.CELL_GAP)
+            val x = gridX + (i % 3) * (PrayerDesign.CELL_W + PrayerDesign.CELL_GAP)
             val top = PrayerDesign.TOP + (i / 3) * (PrayerDesign.ROW_H + PrayerDesign.ROW_GAP)
             val past = m.minutes[pt.prayer.ordinal] <= m.now
             val fade = if (past) .5f else 1f
@@ -322,6 +347,17 @@ internal object PrayerArt {
             label.typeface = sans
             line(c, label, pt.prayer.label, x, top + 29f + 1f, 16f, 17f, alpha(ink, .8f * fade), halo)
         }
+        return countdownTop
+    }
+
+    /** "Maghrib 6:58 PM" at [paint]'s size, with AM/PM at 37%. */
+    private fun nextWidth(paint: Paint, pt: PrayerTime, h24: Boolean): Float {
+        val (t, ap) = clock(pt.hhmm, h24)
+        val size = paint.textSize
+        val main = paint.measureText("${pt.prayer.label} $t")
+        if (ap.isEmpty()) return main
+        paint.textSize = size * .37f
+        return main + paint.measureText(" $ap").also { paint.textSize = size }
     }
 
     /** A time in Barlow with a smaller " AM", in a box [size] tall from [top]. */

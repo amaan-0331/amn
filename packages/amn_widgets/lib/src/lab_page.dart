@@ -158,7 +158,11 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
             for (final s in [...prayerSizes, ...oneUiPrayerSizes])
               _Slot(
                 label: 'Prayer ${s.label}${s.hostScale < 1 ? ' (One UI)' : ''}',
-                child: WidgetPreview(kind: 'prayer', widgetId: -1, size: s, settings: const {}, debug: _debug),
+                // A 5×1 is wider than the phone's screen; scroll sideways to see all of it.
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: WidgetPreview(kind: 'prayer', widgetId: -1, size: s, settings: const {}, debug: _debug),
+                ),
               ),
           if (_kind == 'both' || _kind == 'weather')
             for (final s in _oneUi ? oneUiWeatherSizes : weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),

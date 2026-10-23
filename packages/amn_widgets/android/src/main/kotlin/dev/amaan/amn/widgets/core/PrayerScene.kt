@@ -69,8 +69,9 @@ class PrayerMoment(
 }
 
 /**
- * The 4×1 prayer widget's geometry, in the units of its design (drawn at 501×141, 1.5× of 334×94 dp).
- * The renderer scales these to the widget; the light check below uses them as they are.
+ * The prayer widget's geometry, in the units of its design (a 4×1 drawn at 501×141, 1.5× of 334×94 dp).
+ * The renderer scales these to the widget; the light check below uses them as they are. Wider than
+ * [WIDE_W] (a 5×1), the next prayer's name and time share one line and the grid keeps to the right.
  */
 object PrayerDesign {
     const val W = 501f
@@ -89,15 +90,39 @@ object PrayerDesign {
     const val LIGHT_R = 230f
     const val VIGNETTE_R = 520f
 
+    /** 4:1, between One UI's 4×1 (3.55:1) and 5×1 (4.43:1). */
+    const val WIDE_W = 4 * H
+
+    /** Space between the one-line next prayer and the grid. */
+    const val WIDE_GAP = 14f
+
+    fun wide(w: Float) = w >= WIDE_W
+
+    /** The grid's left edge on a widget [w] units wide: as on the 4×1, measured from the right on a wide one. */
+    fun gridX(w: Float) = if (wide(w)) w - (W - GRID_X) else GRID_X
+
+    /** Top of the countdown. On a wide widget it and the one-line next prayer (about 52 tall) are centred above the floor. */
+    fun countdownTop(w: Float, nextSize: Float = 52f) =
+        if (wide(w)) TOP + (H - FLOOR - 5 - TOP - (19 + nextSize)) / 2 else TOP
+
     /** The sun or moon's centre on a widget [w] units wide. */
     fun orb(f: Float, w: Float): Pair<Float, Float> {
         val ground = H - FLOOR
         return (ARC_INSET + f * (w - 2 * ARC_INSET)) to (ground - 6 - sin(f * PI).toFloat() * (ground - 24))
     }
 
-    /** Middles of the text: the countdown, next time, next name, and the five grid cells. */
-    fun textPoints(): List<Pair<Float, Float>> = listOf(PAD + 50 to TOP + 9, PAD + 55 to TOP + 45, PAD + 30 to TOP + 84) +
-        (0 until 5).map { i -> GRID_X + (i % 3) * (CELL_W + CELL_GAP) + CELL_W / 2 to TOP + (i / 3) * (ROW_H + ROW_GAP) + ROW_H / 2 }
+    /** Middles of the text on a widget [w] units wide: the countdown, the next prayer, and the five grid cells. */
+    fun textPoints(w: Float = W): List<Pair<Float, Float>> {
+        val gx = gridX(w)
+        val next = if (wide(w)) {
+            val top = countdownTop(w)
+            val mid = (PAD + gx - WIDE_GAP) / 2
+            listOf(PAD + 50 to top + 9, mid to top + 45, PAD + 30 to top + 45, gx - WIDE_GAP - 30 to top + 45)
+        } else {
+            listOf(PAD + 50 to TOP + 9, PAD + 55 to TOP + 45, PAD + 30 to TOP + 84)
+        }
+        return next + (0 until 5).map { i -> gx + (i % 3) * (CELL_W + CELL_GAP) + CELL_W / 2 to TOP + (i / 3) * (ROW_H + ROW_GAP) + ROW_H / 2 }
+    }
 }
 
 /**
@@ -129,9 +154,9 @@ data class SkyLight(val color: Int, val alpha: Float, val vignette: Float) {
      * behind it. The light passes behind the text for part of the day; at dusk and night it
      * brightens the sky behind light text, so it gives way there.
      */
-    fun readable(p: WidgetPalette, orb: Pair<Float, Float>): SkyLight {
+    fun readable(p: WidgetPalette, orb: Pair<Float, Float>, w: Float = PrayerDesign.W): SkyLight {
         var light = this
-        val points = PrayerDesign.textPoints()
+        val points = PrayerDesign.textPoints(w)
         fun worst() = points.minOf { (x, y) -> Palettes.contrast(p.ink, light.skyAt(p, x, y, orb)) }
         while (worst() < Palettes.MIN_CONTRAST && (light.alpha > 0f || light.vignette > 0f)) {
             light = SkyLight(color, (light.alpha - .05f).coerceAtLeast(0f), (light.vignette - .03f).coerceAtLeast(0f))

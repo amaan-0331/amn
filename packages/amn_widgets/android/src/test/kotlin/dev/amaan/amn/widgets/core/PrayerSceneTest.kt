@@ -45,11 +45,12 @@ class PrayerSceneTest {
         for (sky in PrayerSky.entries) for (dark in listOf(false, true)) {
             val pal = Palettes.prayer(sky, dark)
             assertTrue(Palettes.contrast(pal.accent, pal.base.top) >= Palettes.MIN_CONTRAST, "$sky accent")
-            for (f in listOf(0f, .25f, .5f, .75f, 1f)) {
-                val orb = PrayerDesign.orb(f, PrayerDesign.W)
-                val light = SkyLight.of(sky).readable(pal.base, orb)
-                val worst = PrayerDesign.textPoints().minOf { (x, y) -> Palettes.contrast(pal.base.ink, light.skyAt(pal.base, x, y, orb)) }
-                assertTrue(worst >= Palettes.MIN_CONTRAST || light.alpha == 0f, "$sky dark=$dark f=$f: $worst")
+            // The 4×1, and One UI's 5×1 (4.43:1).
+            for (w in listOf(PrayerDesign.W, 625f)) for (f in listOf(0f, .25f, .5f, .75f, 1f)) {
+                val orb = PrayerDesign.orb(f, w)
+                val light = SkyLight.of(sky).readable(pal.base, orb, w)
+                val worst = PrayerDesign.textPoints(w).minOf { (x, y) -> Palettes.contrast(pal.base.ink, light.skyAt(pal.base, x, y, orb)) }
+                assertTrue(worst >= Palettes.MIN_CONTRAST || light.alpha == 0f, "$sky dark=$dark w=$w f=$f: $worst")
             }
         }
     }
@@ -60,5 +61,17 @@ class PrayerSceneTest {
         val pal = Palettes.prayer(PrayerSky.MORNING, false)
         val orb = PrayerDesign.orb(.1f, PrayerDesign.W)
         assertEquals(.62f, SkyLight.of(PrayerSky.MORNING).readable(pal.base, orb).alpha)
+    }
+
+    @Test
+    fun `a 5×1 puts the next prayer on one line, with the grid where it is on a 4×1 from the right`() {
+        assertTrue(!PrayerDesign.wide(PrayerDesign.W))
+        assertTrue(!PrayerDesign.wide(3.55f * PrayerDesign.H))
+        assertTrue(PrayerDesign.wide(4.43f * PrayerDesign.H))
+        assertEquals(PrayerDesign.GRID_X, PrayerDesign.gridX(PrayerDesign.W))
+        assertEquals(625f - (PrayerDesign.W - PrayerDesign.GRID_X), PrayerDesign.gridX(625f))
+        // Centred above the floor: equal space above the countdown and below the 52-unit line.
+        val top = PrayerDesign.countdownTop(625f, 52f)
+        assertEquals(top - PrayerDesign.TOP, PrayerDesign.H - PrayerDesign.FLOOR - 5 - (top + 19 + 52), .01f)
     }
 }

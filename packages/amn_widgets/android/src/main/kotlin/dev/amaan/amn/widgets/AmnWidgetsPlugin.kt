@@ -17,6 +17,7 @@ import dev.amaan.amn.widgets.core.RawForecast
 import dev.amaan.amn.widgets.core.Summary
 import dev.amaan.amn.widgets.data.SampleForecast
 import dev.amaan.amn.widgets.data.ClockSchedule
+import dev.amaan.amn.widgets.data.PrayerSchedule
 import dev.amaan.amn.widgets.data.PrayerStore
 import dev.amaan.amn.widgets.data.Awqaf
 import dev.amaan.amn.widgets.data.ClockWeather
@@ -197,6 +198,7 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                 val area = call.argument<Int>("area") ?: return result.error("args", "area missing", null)
                 PrayerStore(appContext).saveArea(area)
                 result.success(null)
+                scope.launch { PrayerSchedule.redraw(appContext) }
             }
 
             "prayerRefresh" -> scope.launch {
@@ -208,6 +210,7 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                         "refreshedAt" to prayer.refreshedAt(),
                     ),
                 )
+                if (outcome.changed > 0) PrayerSchedule.redraw(appContext)
             }
 
             "cancel" -> {

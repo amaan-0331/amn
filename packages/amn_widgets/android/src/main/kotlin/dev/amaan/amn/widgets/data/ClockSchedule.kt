@@ -76,6 +76,7 @@ class TimeChangeReceiver : BroadcastReceiver() {
             try {
                 ClockWidget().redrawAll(context)
                 WeatherWidget().redrawAll(context)
+                PrayerSchedule.redraw(context)
             } finally {
                 pending.finish()
             }

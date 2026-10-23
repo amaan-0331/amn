@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The prayer widget's "Next · in 2:58:12". Counts down by itself, so the widget is only
+     redrawn at prayer times and every quarter hour. -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/amn_countdown"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif"
+    android:includeFontPadding="false"
+    android:maxLines="1" />

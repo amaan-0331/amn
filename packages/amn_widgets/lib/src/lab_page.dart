@@ -9,6 +9,7 @@ import 'ui.dart';
 ///
 /// Open it from the command line with any state, for example:
 /// adb shell am start -n dev.amaan.amn/.MainActivity --es route "/widget/lab?cond=rain&hour=21&dark=1&kind=weather&grid=oneui"
+/// The prayer widget takes the time of day in minutes: "/widget/lab?kind=prayer&min=1100"
 class WidgetLabPage extends StatefulWidget {
   const WidgetLabPage({super.key, this.query = const {}});
 
@@ -35,7 +36,9 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
   late bool _seconds = widget.query['secs'] == '1';
   late bool _clockWeather = widget.query['cw'] != '0';
   late String _zone = _pick(widget.query['city'], _clockCities.keys.toList(), 'Asia/Tokyo');
-  late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both'], 'both');
+  late String _kind = _pick(widget.query['kind'], ['weather', 'clock', 'both', 'prayer'], 'both');
+  // Prayer widget: minutes after midnight, UAE time.
+  late double _minute = (int.tryParse(widget.query['min'] ?? '') ?? DateTime.now().hour * 60 + DateTime.now().minute).clamp(0, 1439).toDouble();
   late bool _oneUi = widget.query['grid'] == 'oneui';
   late final bool _showEngine = widget.query['engine'] != '0';
   late String _refresh = _pick(widget.query['rf'], ['idle', 'busy', 'done', 'offline'], 'idle');
@@ -50,6 +53,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
         'h24': _h24,
         'seed': _seed,
         'refresh': _refresh,
+        'minute': _minute.round(),
         if (_dark != null) 'dark': _dark,
       };
 
@@ -88,10 +92,16 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
             for (final c in _conditions)
               ChoiceChip(label: Text(c), selected: c == _condition, showCheckmark: false, onSelected: (_) => setState(() => _condition = c)),
           ]),
-          Row(children: [
-            SizedBox(width: 56, child: Text('${h.toString().padLeft(2, '0')}:00')),
-            Expanded(child: Slider(value: _hour, min: 0, max: 23, divisions: 23, onChanged: (v) => setState(() => _hour = v))),
-          ]),
+          if (_kind == 'prayer')
+            Row(children: [
+              SizedBox(width: 56, child: Text('${(_minute ~/ 60).toString().padLeft(2, '0')}:${(_minute.round() % 60).toString().padLeft(2, '0')}')),
+              Expanded(child: Slider(value: _minute, min: 0, max: 1435, divisions: 287, onChanged: (v) => setState(() => _minute = v))),
+            ])
+          else
+            Row(children: [
+              SizedBox(width: 56, child: Text('${h.toString().padLeft(2, '0')}:00')),
+              Expanded(child: Slider(value: _hour, min: 0, max: 23, divisions: 23, onChanged: (v) => setState(() => _hour = v))),
+            ]),
           Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
             SegmentedButton<bool?>(
               showSelectedIcon: false,
@@ -112,7 +122,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
           Wrap(spacing: 6, runSpacing: 6, children: [
             for (final e in _clockCities.entries)
               ChoiceChip(label: Text(e.value.$1), selected: e.key == _zone, showCheckmark: false, onSelected: (_) => setState(() => _zone = e.key)),
-            for (final k in ['both', 'weather', 'clock'])
+            for (final k in ['both', 'weather', 'clock', 'prayer'])
               ChoiceChip(label: Text(k), selected: k == _kind, showCheckmark: false, onSelected: (_) => setState(() => _kind = k)),
             FilterChip(label: const Text('One UI grid'), selected: _oneUi, onSelected: (v) => setState(() => _oneUi = v)),
           ]),
@@ -133,7 +143,7 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               ),
             ),
           ]),
-          if (_kind != 'clock' && _showEngine) ...[
+          if ((_kind == 'both' || _kind == 'weather') && _showEngine) ...[
             const SizedBox(height: 20),
             SummaryEngine(
               condition: _condition,
@@ -144,9 +154,15 @@ class _WidgetLabPageState extends State<WidgetLabPage> {
               onSeed: (s) => setState(() => _seed = s),
             ),
           ],
-          if (_kind != 'clock')
+          if (_kind == 'prayer')
+            for (final s in [...prayerSizes, ...oneUiPrayerSizes])
+              _Slot(
+                label: 'Prayer ${s.label}${s.hostScale < 1 ? ' (One UI)' : ''}',
+                child: WidgetPreview(kind: 'prayer', widgetId: -1, size: s, settings: const {}, debug: _debug),
+              ),
+          if (_kind == 'both' || _kind == 'weather')
             for (final s in _oneUi ? oneUiWeatherSizes : weatherSizes) _Slot(label: 'Weather ${s.label}', child: WidgetPreview(kind: 'weather', widgetId: -1, size: s, settings: _weatherSettings, debug: _debug)),
-          if (_kind != 'weather')
+          if (_kind == 'both' || _kind == 'clock')
             for (final s in _oneUi ? oneUiClockSizes : clockSizes) _Slot(label: 'Clock ${s.label}', child: WidgetPreview(kind: 'clock', widgetId: -1, size: s, settings: _clockSettings, debug: _debug)),
         ],
       ),

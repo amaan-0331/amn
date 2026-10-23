@@ -37,8 +37,12 @@ class AmnApp extends StatelessWidget {
       themeAnimationDuration: drift.settled ? const Duration(milliseconds: 1200) : Duration.zero,
       builder: (context, child) => DriftBackground(child: child!),
       onGenerateRoute: _route,
-      // One route only: the default would also push '/' and '/widget' under '/widget/weather?...'.
-      onGenerateInitialRoutes: (name) => [_route(RouteSettings(name: name))],
+      // The default would also push '/' and '/widget' under '/widget/weather?...'. A tool opened
+      // from its home-screen widget ('/prayer') keeps home underneath, so Back goes there.
+      onGenerateInitialRoutes: (name) => [
+        if (name == '/prayer') _route(const RouteSettings(name: '/')),
+        _route(RouteSettings(name: name)),
+      ],
     );
   }
 }

@@ -40,6 +40,10 @@ const oneUiClockSizes = [
   PreviewSize('3×1', 301, 113, hostScale: .8333),
 ];
 
+const oneUiPrayerSizes = [PreviewSize('4×1', 401, 113, hostScale: .8333)];
+
+const prayerSizes = [PreviewSize('4×1', 358, 103)];
+
 const weatherSizes = [
   PreviewSize('2×1', 140, 70),
   PreviewSize('2×2', 140, 140),

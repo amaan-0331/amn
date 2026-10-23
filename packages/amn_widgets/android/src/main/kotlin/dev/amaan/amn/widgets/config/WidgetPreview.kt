@@ -17,6 +17,8 @@ import dev.amaan.amn.widgets.data.Units
 import dev.amaan.amn.widgets.data.WeatherSettings
 import dev.amaan.amn.widgets.data.WeatherState
 import dev.amaan.amn.widgets.glance.ClockWidget
+import dev.amaan.amn.widgets.glance.PrayerPreview
+import dev.amaan.amn.widgets.glance.PrayerWidget
 import dev.amaan.amn.widgets.glance.WeatherWidget
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
@@ -54,7 +56,7 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
         onDispose()
     }
 
-    /** args: kind ("weather"|"clock"), width and height in dp, settings (unsaved). */
+    /** args: kind ("weather"|"clock"|"prayer"), width and height in dp, settings (unsaved). */
     fun render(args: Map<*, *>) {
         val kind = args["kind"] as? String ?: "weather"
         val size = DpSize(((args["width"] as? Number)?.toFloat() ?: 140f).dp, ((args["height"] as? Number)?.toFloat() ?: 140f).dp)
@@ -77,7 +79,9 @@ internal class PreviewView(context: Context, private val onDispose: () -> Unit) 
         job = scope.launch {
             val ctx = if (dark == null) frame.context else frame.context.withNightMode(dark)
             val rv = runCatching {
-                if (kind == "clock") {
+                if (kind == "prayer") {
+                    PrayerWidget().compose(ctx, size = size, state = PrayerPreview((lab?.get("minute") as? Number)?.toInt(), debug?.h24))
+                } else if (kind == "clock") {
                     ClockWidget().compose(ctx, size = size, state = ClockPreview(ClockSettings.from(settings), debug, previewWidgetId = widgetId))
                 } else {
                     WeatherWidget().compose(ctx, size = size, state = WeatherState(WeatherSettings.from(settings), Units.from(settings), previewWidgetId = widgetId, debug = debug))

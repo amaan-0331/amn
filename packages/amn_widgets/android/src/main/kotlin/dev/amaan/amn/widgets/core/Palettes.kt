@@ -7,6 +7,9 @@ import kotlin.math.roundToInt
 /** Colors are ARGB ints. [contrast] is the worst-case ratio of [ink] against both stops. */
 data class WidgetPalette(val top: Int, val bottom: Int, val ink: Int, val contrast: Double)
 
+/** The prayer widget's sky, plus the color of the next prayer's name. */
+data class PrayerPalette(val base: WidgetPalette, val accent: Int)
+
 object Palettes {
     const val MIN_CONTRAST = 4.5
 
@@ -41,19 +44,34 @@ object Palettes {
     private val white = 0xFFFFFFFF.toInt()
 
     fun of(condition: Condition, phase: Phase, dark: Boolean): WidgetPalette {
-        var top: Int
-        var bottom: Int
+        val top: Int
+        val bottom: Int
         val preferred: Int
         when {
             phase == Phase.NIGHT -> night.getValue(condition).let { top = it.top; bottom = it.bottom; preferred = it.ink }
             condition == Condition.CLEAR && phase == Phase.DAWN -> clearDawn.let { top = it.top; bottom = it.bottom; preferred = it.ink }
             condition == Condition.CLEAR && phase == Phase.DUSK -> clearDusk.let { top = it.top; bottom = it.bottom; preferred = it.ink }
             else -> day.getValue(condition).let {
-                top = it.top; bottom = it.bottom; preferred = it.ink
-                if (phase == Phase.DAWN) { top = mix(top, 0xFFFF9E7A.toInt(), .38); bottom = mix(bottom, 0xFFFFD9A8.toInt(), .25) }
-                if (phase == Phase.DUSK) { top = mix(top, 0xFFC2456B.toInt(), .35); bottom = mix(bottom, 0xFF3E2A7A.toInt(), .45) }
+                preferred = it.ink
+                top = when (phase) {
+                    Phase.DAWN -> mix(it.top, 0xFFFF9E7A.toInt(), .38)
+                    Phase.DUSK -> mix(it.top, 0xFFC2456B.toInt(), .35)
+                    else -> it.top
+                }
+                bottom = when (phase) {
+                    Phase.DAWN -> mix(it.bottom, 0xFFFFD9A8.toInt(), .25)
+                    Phase.DUSK -> mix(it.bottom, 0xFF3E2A7A.toInt(), .45)
+                    else -> it.bottom
+                }
             }
         }
+        return finish(top, bottom, preferred, phase, dark)
+    }
+
+    /** Dark mode, then the contrast guard, shared by every widget's sky. */
+    private fun finish(top0: Int, bottom0: Int, preferred: Int, phase: Phase, dark: Boolean): WidgetPalette {
+        var top = top0
+        var bottom = bottom0
         if (dark && phase != Phase.NIGHT) {
             // Dawn and dusk are already deep; darken them less so the sunrise and sunset colors survive.
             val soft = phase == Phase.DAWN || phase == Phase.DUSK
@@ -71,6 +89,35 @@ object Palettes {
             guard++
         }
         return WidgetPalette(top, bottom, ink, ratio)
+    }
+
+    private class PrayerStops(val stops: Stops, val accent: Int, val phase: Phase)
+    private fun p(top: Long, bottom: Long, ink: Long, accent: Long, phase: Phase) = PrayerStops(s(top, bottom, ink), accent.toInt(), phase)
+
+    private val prayerSkies = mapOf(
+        PrayerSky.ISHA to p(0xFF141A4E, 0xFF2C2775, 0xFFEEF0FF, 0xFFB7AEFF, Phase.NIGHT),
+        PrayerSky.FAJR to p(0xFFFFB59A, 0xFFFFDFAE, 0xFF3B1209, 0xFFA2381A, Phase.DAWN),
+        PrayerSky.MORNING to p(0xFF8CCBFF, 0xFFE4F1FA, 0xFF0E2A47, 0xFF1B5FA0, Phase.DAY),
+        PrayerSky.DHUHR to p(0xFF5FB0F5, 0xFFBFE2FF, 0xFF0E2A47, 0xFF0F4E8C, Phase.DAY),
+        PrayerSky.ASR to p(0xFFFFC45A, 0xFFFF9440, 0xFF3A1500, 0xFF7A2E00, Phase.DAY),
+        PrayerSky.MAGHRIB to p(0xFFC2456B, 0xFF3E2A7A, 0xFFFFF1EC, 0xFFFFC2D6, Phase.DUSK),
+    )
+
+    /**
+     * The prayer widget's sky for [sky], and an accent for the next prayer's name. The accent
+     * moves toward the ink until it is as readable as the rest of the text.
+     */
+    fun prayer(sky: PrayerSky, dark: Boolean): PrayerPalette {
+        val st = prayerSkies.getValue(sky)
+        val base = finish(st.stops.top, st.stops.bottom, st.stops.ink, st.phase, dark)
+        fun score(c: Int) = min(contrast(c, base.top), contrast(c, base.bottom))
+        var accent = st.accent
+        var guard = 0
+        while (score(accent) < MIN_CONTRAST && guard < 10) {
+            accent = mix(accent, base.ink, .2)
+            guard++
+        }
+        return PrayerPalette(base, if (score(accent) >= MIN_CONTRAST) accent else base.ink)
     }
 
     private fun pickInk(top: Int, bottom: Int, preferred: Int): Pair<Int, Double> {

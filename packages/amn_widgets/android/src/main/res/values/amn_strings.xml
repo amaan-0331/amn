@@ -3,4 +3,6 @@
     <string name="amn_weather_widget_description">Temperature, a one-line summary and the forecast for where you are.</string>
     <string name="amn_clock_widget_label">City clock</string>
     <string name="amn_clock_widget_description">The time in one city you choose.</string>
+    <string name="amn_prayer_widget_label">Prayer times</string>
+    <string name="amn_prayer_widget_description">Today\'s official UAE prayer times for your area, and the next one.</string>
 </resources>

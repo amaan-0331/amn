@@ -5,6 +5,8 @@
     <!-- Weather "Current location". Refreshes run in the background, so they need "Allow all the time". -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- The prayer widget is redrawn exactly at each prayer time, when its countdown runs out. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application>
         <!-- Edit page for both widgets. Opened by the launcher when a widget is added,
@@ -46,7 +48,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/amn_clock_widget_info" />
         </receiver>
-        <!-- Redraws both widgets when the phone's time or time zone changes. -->
+        <receiver
+            android:name="dev.amaan.amn.widgets.glance.PrayerWidgetReceiver"
+            android:exported="true"
+            android:label="@string/amn_prayer_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/amn_prayer_widget_info" />
+        </receiver>
+        <receiver
+            android:name="dev.amaan.amn.widgets.data.PrayerSchedule$Receiver"
+            android:exported="false" />
+        <!-- Redraws the widgets when the phone's time or time zone changes. -->
         <receiver
             android:name="dev.amaan.amn.widgets.data.TimeChangeReceiver"
             android:exported="false">

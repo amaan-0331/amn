@@ -1,13 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:amn/prayer/awqaf.dart';
 import 'package:amn/prayer/prayer_page.dart';
 import 'package:amn/prayer/timetable.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// The bundled timetable, an Android asset of amn_widgets.
+const asset = 'packages/amn_widgets/android/src/main/assets/prayer/uae.json';
+
 void main() {
-  final table = Timetable.fromJson(File('assets/prayer/uae.json').readAsStringSync());
+  final table = Timetable.fromJson(File(asset).readAsStringSync());
 
   test('bundle covers every zone and area', () {
     expect(table.zones.length, 41);
@@ -71,21 +72,13 @@ void main() {
     expect(turns.last.holds(1), isFalse);
   });
 
-  test('parse accepts the API shape and rejects anything else', () {
-    final days = [
-      for (var i = 0; i < 366; i++)
-        {'fajer': '05:04', 'shuroq': '06:18', 'dhohur': '12:06', 'aser': '15:19', 'maghreb': '17:48', 'isha': '19:02'},
-    ];
-    String body(List d, {bool official = true}) => jsonEncode({
-          'result': {
-            'prayer_times': d,
-            'meta_data': {'method': {'official': official}},
-          },
-        });
-    expect(AwqafClient.parse(body(days)), startsWith('050406181206151917481902'));
-    expect(() => AwqafClient.parse(body(days.sublist(1))), throwsA(isA<AwqafException>()));
-    expect(() => AwqafClient.parse(body(days, official: false)), throwsA(isA<AwqafException>()));
-    expect(() => AwqafClient.parse('{"message":"Invalid or expired API key","result":null}'), throwsA(isA<AwqafException>()));
+  test('refreshed zones replace bundled ones; bad ones are ignored', () {
+    final t = Timetable.fromJson(File(asset).readAsStringSync());
+    final fresh = '0'.padRight(Timetable.daysLength, '1');
+    t.apply({69: fresh, 70: 'short', 999: fresh});
+    expect(t.zones[69], fresh);
+    expect(t.zones[70], table.zones[70]);
+    expect(t.zones.containsKey(999), isFalse);
   });
 
   test('until label', () {

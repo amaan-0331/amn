@@ -1,5 +1,5 @@
 # Usage: python3 tool/prayer/fetch.py
-"""Builds assets/prayer/uae.json: the official UAE prayer timetable from Awqaf
+"""Builds the bundled UAE prayer timetable from Awqaf
 (the General Authority of Islamic Affairs, Endowments and Zakat), the source
 behind awqaf.gov.ae/prayer-times.
 
@@ -9,7 +9,10 @@ neighbourhood list) come from areas.tsv, which maps each to its timetable zone.
 
 The asset stores each zone as one string, 366 days x 6 times (Fajr, Sunrise,
 Dhuhr, Asr, Maghrib, Isha) x HHMM. The app's Refresh does the same fetch; keep
-API_URL, API_KEY and the encoding in step with lib/prayer/awqaf.dart."""
+API_URL, API_KEY and the encoding in step with Awqaf.kt in amn_widgets.
+
+The file is an Android asset of amn_widgets, so the home-screen widgets read it
+natively; the app gets it through the amn/widgets channel."""
 import csv, datetime, json, os, sys, urllib.request
 
 API_URL = 'https://internationalprayertime.awqaf.gov.ae/api/v1/prayertimes'
@@ -19,7 +22,7 @@ FIELDS = ('fajer', 'shuroq', 'dhohur', 'aser', 'maghreb', 'isha')
 EMIRATES = {1: 'Abu Dhabi', 2: 'Dubai', 3: 'Sharjah', 4: 'Ajman', 5: 'Umm Al Quwain', 6: 'Ras Al Khaimah', 7: 'Fujairah'}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, '..', '..', 'assets', 'prayer', 'uae.json')
+OUT = os.path.join(HERE, '..', '..', 'packages', 'amn_widgets', 'android', 'src', 'main', 'assets', 'prayer', 'uae.json')
 
 
 def fetch(zone):

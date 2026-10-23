@@ -168,6 +168,13 @@ class Timetable {
 
   late final _areasById = {for (final a in areas) a.id: a};
 
+  /// Puts refreshed zones in place of the bundled ones (well-formed, known zones only).
+  void apply(Map<int, String> refreshed) {
+    refreshed.forEach((zone, times) {
+      if (zones.containsKey(zone) && isValid(times)) zones[zone] = times;
+    });
+  }
+
   Area? area(int id) => _areasById[id];
 
   /// The six times for [zone] on [date] (a UAE calendar date; only y/m/d are used).

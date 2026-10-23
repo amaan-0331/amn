@@ -17,6 +17,8 @@ import dev.amaan.amn.widgets.core.RawForecast
 import dev.amaan.amn.widgets.core.Summary
 import dev.amaan.amn.widgets.data.SampleForecast
 import dev.amaan.amn.widgets.data.ClockSchedule
+import dev.amaan.amn.widgets.data.PrayerStore
+import dev.amaan.amn.widgets.data.Awqaf
 import dev.amaan.amn.widgets.data.ClockWeather
 import dev.amaan.amn.widgets.data.ClockSettings
 import dev.amaan.amn.widgets.data.ForecastCache
@@ -41,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -174,6 +177,37 @@ class AmnWidgetsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Activit
                         .putExtra(WidgetConfigActivity.EXTRA_MODE, "edit"),
                 )
                 result.success(null)
+            }
+
+            // Prayer times: the app's page reads and writes them here; widgets read PrayerStore directly.
+            "prayerLoad" -> scope.launch {
+                val prayer = PrayerStore(appContext)
+                val data = withContext(Dispatchers.IO) {
+                    mapOf(
+                        "bundle" to prayer.bundleJson(),
+                        "refreshed" to prayer.refreshed().mapKeys { it.key.toString() },
+                        "area" to prayer.areaId(),
+                        "refreshedAt" to prayer.refreshedAt(),
+                    )
+                }
+                result.success(data)
+            }
+
+            "prayerSetArea" -> {
+                val area = call.argument<Int>("area") ?: return result.error("args", "area missing", null)
+                PrayerStore(appContext).saveArea(area)
+                result.success(null)
+            }
+
+            "prayerRefresh" -> scope.launch {
+                val outcome = Awqaf.refresh(appContext)
+                val prayer = PrayerStore(appContext)
+                result.success(
+                    outcome.toMap() + mapOf(
+                        "refreshed" to withContext(Dispatchers.IO) { prayer.refreshed().mapKeys { it.key.toString() } },
+                        "refreshedAt" to prayer.refreshedAt(),
+                    ),
+                )
             }
 
             "cancel" -> {

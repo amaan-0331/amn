@@ -33,11 +33,21 @@ Design spec: `docs/design/widgets-spec.html`.
 
 ## Prayer times
 
-UAE prayer times from Awqaf's official timetable, bundled in `assets/prayer/uae.json`
-(41 timetable zones, 319 areas). Awqaf's table is the same every year, so the bundle
-doesn't go stale; the page's Refresh fetches it again from Awqaf to pick up any revision.
-If Awqaf changes its access key or response format, Refresh says so and the bundled
-table stays in use; update `tool/prayer/fetch.py` and `lib/prayer/awqaf.dart`, then rebuild:
+UAE prayer times from Awqaf's official timetable (41 timetable zones, 319 areas). Like
+the widgets' data, Kotlin owns it so home-screen widgets can use it with the app closed:
+
+- the bundled table is an Android asset of amn_widgets
+  (`packages/amn_widgets/android/src/main/assets/prayer/uae.json`);
+- `PrayerStore` (`data/PrayerData.kt`) keeps the chosen area and the zones from the last
+  refresh, and `Awqaf` fetches them; `core/PrayerTimes.kt` works out a day's times and
+  the next prayer;
+- the app's prayer page reads and writes all of it through the amn/widgets channel
+  (`PrayerBridge`), and does its own chart maths in `lib/prayer/`.
+
+Awqaf's table is the same every year, so the bundle doesn't go stale; Refresh fetches it
+again to pick up any revision. If Awqaf changes its access key or response format, Refresh
+says so and the current table stays in use; update `tool/prayer/fetch.py` and `Awqaf` in
+`data/PrayerData.kt`, then rebuild:
 
 ```
 python3 tool/prayer/fetch.py

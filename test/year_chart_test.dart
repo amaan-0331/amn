@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final table = Timetable.fromJson(File('assets/prayer/uae.json').readAsStringSync());
+  final table = Timetable.fromJson(File('packages/amn_widgets/android/src/main/assets/prayer/uae.json').readAsStringSync());
   final series = table.series(69, Prayer.fajr);
 
   Future<List<DateTime>> pump(WidgetTester tester, YearChartController controller) async {

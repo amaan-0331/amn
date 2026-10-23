@@ -11,6 +11,64 @@ class LaunchArgs {
   bool get adding => mode == 'add';
 }
 
+/// What Kotlin holds for prayer times: the bundled timetable as JSON, zones
+/// from the last refresh (replacing bundled ones), the chosen area, and when
+/// the last refresh was.
+class PrayerData {
+  const PrayerData({required this.bundle, required this.refreshed, required this.area, this.refreshedAt});
+
+  factory PrayerData._from(Map<String, Object?> m) => PrayerData(
+        bundle: m['bundle']! as String,
+        refreshed: _zones(m['refreshed']),
+        area: m['area']! as int,
+        refreshedAt: m['refreshedAt'] as int?,
+      );
+
+  final String bundle;
+  final Map<int, String> refreshed;
+  final int area;
+  final int? refreshedAt;
+}
+
+/// What a prayer refresh did; on success, the zones it saved.
+class PrayerRefresh {
+  const PrayerRefresh({required this.checked, required this.changed, this.error, required this.refreshed, this.refreshedAt});
+
+  final int checked;
+  final int changed;
+  final String? error;
+  final Map<int, String> refreshed;
+  final int? refreshedAt;
+}
+
+Map<int, String> _zones(Object? m) => {
+      for (final e in (m as Map? ?? const {}).entries) int.parse(e.key as String): e.value as String,
+    };
+
+/// Prayer times over the `amn/widgets` channel. Kotlin owns them, so the
+/// home-screen widgets read the same data with the app closed.
+class PrayerBridge {
+  PrayerBridge._();
+
+  static const _channel = MethodChannel('amn/widgets');
+
+  static Future<PrayerData> load() async => PrayerData._from((await _channel.invokeMapMethod<String, Object?>('prayerLoad'))!);
+
+  static Future<void> setArea(int id) => _channel.invokeMethod('prayerSetArea', {'area': id});
+
+  /// Fetches every zone from Awqaf again; keeps the current table unless all succeed.
+  static Future<PrayerRefresh> refresh() async {
+    final m = (await _channel.invokeMapMethod<String, Object?>('prayerRefresh'))!;
+    return PrayerRefresh(
+      checked: m['checked']! as int,
+      changed: m['changed']! as int,
+      error: m['error'] as String?,
+      refreshed: _zones(m['refreshed']),
+      refreshedAt: m['refreshedAt'] as int?,
+    );
+  }
+}
+
 /// The `amn/widgets` channel. Kotlin owns all widget settings; Flutter only
 /// reads and writes them through here.
 class WidgetBridge {

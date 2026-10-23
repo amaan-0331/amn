@@ -1,32 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:amn_widgets/amn_widgets.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'awqaf.dart';
 import 'timetable.dart';
 
-/// What the last refresh did.
-class RefreshOutcome {
-  const RefreshOutcome({required this.checked, required this.changed, this.error});
-
-  final int checked;
-  final int changed;
-  final String? error;
-}
-
-/// The bundled timetable, any zones refreshed since, and the chosen area.
+/// The timetable, any zones refreshed since, and the chosen area, as Kotlin
+/// holds them (see PrayerStore in amn_widgets). The home-screen widgets read
+/// the same data natively, so the area picked here is theirs too.
 class PrayerStore extends ChangeNotifier {
-  PrayerStore._(this.table, this._prefs, this.refreshedAt, this._areaId);
+  PrayerStore._(this.table, this.refreshedAt, this._areaId);
 
-  static const _zonesKey = 'prayer.zones';
-  static const _refreshedKey = 'prayer.refreshedAt';
-  static const _areaKey = 'prayer.area';
-
-  /// Al Karama, Dubai, until one is chosen.
+  /// Al Karama, Dubai, until one is chosen. Kotlin uses the same default.
   static const defaultArea = 50326;
 
   static Future<PrayerStore>? _instance;
@@ -35,29 +21,22 @@ class PrayerStore extends ChangeNotifier {
   static Future<PrayerStore> get instance => _instance ??= _load();
 
   static Future<PrayerStore> _load() async {
-    final source = await rootBundle.loadString('assets/prayer/uae.json');
+    final data = await PrayerBridge.load();
     // 370 KB of JSON: decode it off the UI thread so no frame waits on it.
+    final source = data.bundle;
     final table = await Isolate.run(() => Timetable.fromJson(source));
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_zonesKey);
-    if (saved != null) {
-      (jsonDecode(saved) as Map<String, dynamic>).forEach((k, v) {
-        final zone = int.parse(k);
-        if (table.zones.containsKey(zone) && Timetable.isValid(v as String)) table.zones[zone] = v;
-      });
-    }
-    return PrayerStore._(table, prefs, prefs.getInt(_refreshedKey), prefs.getInt(_areaKey) ?? defaultArea);
+    table.apply(data.refreshed);
+    return PrayerStore._(table, data.refreshedAt, data.area);
   }
 
   final Timetable table;
-  final SharedPreferences _prefs;
 
   /// Epoch ms of the last successful refresh; null while on the bundled table.
   int? refreshedAt;
 
   int _areaId;
   bool refreshing = false;
-  RefreshOutcome? lastRefresh;
+  PrayerRefresh? lastRefresh;
 
   Area get area => table.area(_areaId) ?? table.area(defaultArea)!;
 
@@ -65,46 +44,24 @@ class PrayerStore extends ChangeNotifier {
 
   set area(Area a) {
     _areaId = a.id;
-    _prefs.setInt(_areaKey, a.id);
+    PrayerBridge.setArea(a.id);
     notifyListeners();
   }
 
-  /// Fetches every zone again from Awqaf. Zones that come back valid replace
-  /// what's stored; anything else leaves the current table as it is.
-  Future<RefreshOutcome> refresh({AwqafClient? client}) async {
+  /// Fetches every zone again from Awqaf (in Kotlin). It saves only if all of
+  /// them come back valid; otherwise the current table stays as it is.
+  Future<PrayerRefresh> refresh() async {
     if (refreshing) return lastRefresh!;
     refreshing = true;
     notifyListeners();
-    final awqaf = client ?? AwqafClient();
-    final fresh = <int, String>{};
-    String? error;
-    final queue = table.zones.keys.toList();
-    // A few at a time: 41 requests, gently.
-    Future<void> worker() async {
-      while (queue.isNotEmpty && error == null) {
-        final zone = queue.removeLast();
-        try {
-          fresh[zone] = await awqaf.fetchZone(zone);
-        } on AwqafException catch (e) {
-          error ??= e.message;
-        }
-      }
-    }
-
-    await Future.wait([for (var i = 0; i < 4; i++) worker()]);
-    var changed = 0;
-    if (error == null) {
-      fresh.forEach((zone, times) {
-        if (table.zones[zone] != times) changed++;
-        table.zones[zone] = times;
-      });
-      refreshedAt = DateTime.now().millisecondsSinceEpoch;
-      await _prefs.setString(_zonesKey, jsonEncode(fresh.map((k, v) => MapEntry('$k', v))));
-      await _prefs.setInt(_refreshedKey, refreshedAt!);
+    final r = await PrayerBridge.refresh();
+    if (r.error == null) {
+      table.apply(r.refreshed);
+      refreshedAt = r.refreshedAt;
     }
     refreshing = false;
-    lastRefresh = RefreshOutcome(checked: fresh.length, changed: changed, error: error);
+    lastRefresh = r;
     notifyListeners();
-    return lastRefresh!;
+    return r;
   }
 }

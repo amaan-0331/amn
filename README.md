@@ -31,6 +31,18 @@ Settings → Battery → Background usage limits → Never sleeping apps, so ref
 
 Design spec: `docs/design/widgets-spec.html`.
 
+## Prayer times
+
+UAE prayer times from Awqaf's official timetable, bundled in `assets/prayer/uae.json`
+(41 timetable zones, 319 areas). Awqaf's table is the same every year, so the bundle
+doesn't go stale; the page's Refresh fetches it again from Awqaf to pick up any revision.
+If Awqaf changes its access key or response format, Refresh says so and the bundled
+table stays in use; update `tool/prayer/fetch.py` and `lib/prayer/awqaf.dart`, then rebuild:
+
+```
+python3 tool/prayer/fetch.py
+```
+
 ## Widget lab
 
 AMN's home screen has a **Widget lab** button (debug and release builds). It renders every widget size through the
@@ -50,6 +62,7 @@ Asia/Dubai), `kind` (weather, clock, both), `cw` (0 hides the clock's weather), 
 - Weather icons: [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) © Microsoft, MIT License
   (see `packages/amn_widgets/third_party/fluent-emoji/LICENSE`). Night partly-cloudy and fog are
   composites of those images.
+- Prayer times: [General Authority of Islamic Affairs, Endowments and Zakat](https://www.awqaf.gov.ae/prayer-times) (Awqaf), official UAE timetable.
 - Weather data and city search: [Open-Meteo](https://open-meteo.com), CC BY 4.0.
 - Numerals: [Barlow Condensed](https://github.com/jpt/barlow), SIL Open Font License 1.1
   (see `packages/amn_widgets/third_party/barlow-condensed/OFL.txt`).

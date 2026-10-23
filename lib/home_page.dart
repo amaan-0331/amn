@@ -5,6 +5,9 @@ import 'package:amn_widgets/amn_widgets.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 
+import 'prayer/prayer_page.dart';
+import 'prayer/prayer_store.dart';
+
 /// Home: a greeting and the time over the full sky, the widgets you've
 /// placed, and the way into the widget lab.
 class HomePage extends StatefulWidget {
@@ -96,6 +99,8 @@ class _HomePageState extends State<HomePage> {
                     const _SkyChip(),
                     const Spacer(),
                     const SizedBox(height: 24),
+                    _PrayerCard(now: _now),
+                    const SizedBox(height: 12),
                     _WidgetsCard(placed: _placed, zones: _zones),
                     const SizedBox(height: 12),
                     const _LabCard(),
@@ -262,6 +267,49 @@ class _WidgetRow extends StatelessWidget {
         'fog' => FluentIcons.weather_fog_24_regular,
         _ => FluentIcons.weather_partly_cloudy_day_24_regular,
       };
+}
+
+/// The next prayer for the chosen area; opens the prayer times page.
+class _PrayerCard extends StatelessWidget {
+  const _PrayerCard({required this.now});
+
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = AmnGlass.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return FutureBuilder<PrayerStore>(
+      future: PrayerStore.instance,
+      builder: (context, snap) {
+        final s = snap.data;
+        final next = s?.table.next(s.area.zone, now);
+        return Glass(
+          child: ListTile(
+            onTap: () => Navigator.of(context).pushNamed('/prayer'),
+            contentPadding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: g.tint, shape: BoxShape.circle, border: Border.all(color: g.edge)),
+              child: Icon(FluentIcons.building_mosque_24_regular, size: 22, color: g.ink),
+            ),
+            title: Text(next == null ? 'Prayer times' : '${next.prayer.label} ${untilLabel(next.at.difference(now))}',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(s == null ? 'UAE · official Awqaf times' : '${s.area.name} · ${s.emirate}', maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (next != null) BigTime(next.hhmm, size: 24),
+                const SizedBox(width: 4),
+                Icon(FluentIcons.chevron_right_20_regular, size: 20, color: scheme.primary),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _LabCard extends StatelessWidget {

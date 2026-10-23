@@ -4,3 +4,4 @@ library;
 
 export 'src/bridge.dart' show LaunchArgs, PlacedWidget, PlacedWidgets, WidgetBridge, ZoneInfo;
 export 'src/routes.dart' show widgetConfigRoute;
+export 'src/ui.dart' show GroupCard, PageTitle, SectionLabel, updatedLabel;

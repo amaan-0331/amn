@@ -1,0 +1,320 @@
+emirate	area	zone	name	name_ar
+1	50140	36	Musaffah	مصفح
+1	50141	37	Al-Ain City	العين
+1	50144	57	Zayed City	مدينة زايد
+1	50146	36	Khalifah City	مدينة خليفة
+1	50147	36	Bani Yas	بني ياس
+1	50148	36	Al-Shamkhah	الشامخة
+1	50166	36	Al-Rawda	الروضة
+1	50173	61	Al-Ruwais	الرويس
+1	50522	40	Ghantoot	غنتوت
+1	50523	40	Al-Rahbah	الرحبة
+1	50524	40	Al-Shahama	الشهامة
+1	50525	36	Saadiyat	السعديات
+1	50526	36	Al-Raha Beach	شاطئ الراحة
+1	50527	36	Yas Island	جزيرة ياس
+1	50528	46	Dalma Island	جزيرة دلما
+1	50530	36	Al-Mafraq	المفرق
+1	50531	36	Mohamed Bin Zayed City	مدينة محمد بن زايد
+1	50532	36	Riyadh	الرياض
+1	50533	36	Al-Wathba	الوثبة
+1	50535	36	Al-Falah	الفلاح
+1	50536	36	Al-Shawamekh	الشوامخ
+1	50538	36	Al-Mushrif	المشرف
+1	50539	36	Al-Hisn	الحصن
+1	50541	58	Al Mirfa	المرفأ
+1	50542	56	Liwa	ليوا
+1	50543	39	Hameem	حميم
+1	50544	36	Al-Khalidiya	الخالدية
+1	50545	36	Al-Maqta' Abu Dhabi	المقطع أبوظبي
+1	50546	36	Al-Bateen	البطين
+1	50547	36	Al-Reef	الريف
+1	50549	36	Mina	الميناء
+1	50550	36	Al Wahda	الوحدة
+1	50551	36	Corniche	الكورنيش
+1	50552	37	Al-Ghadeer	الغدير
+1	50553	40	Al-Bahyah Abu Dhabi	الباهية أبوظبي
+1	50554	61	Al-Dhannah	الظنة
+1	50555	36	Shakhbout City	مدينة شخبوط
+1	50556	36	Al-Nahdah	النهضة
+1	50557	36	Al-Seef	السيف
+1	50558	36	Masdar	مصدر
+1	50559	36	Sas Al Nakhl	ساس النخل
+1	50560	36	Bain Al-Jesrain	بين الجسرين
+1	50561	40	Al-Shelaylah	الشليلة
+1	50563	40	Sayh Al-Sedeirah	سيح السدرة
+1	50564	50	Al-Sila'	السلع
+1	50565	63	Sweihan	سويحان
+1	50566	50	Al-Ghuwaifat	الغويفات
+1	50567	54	Al-Khaznah	الخزنة
+1	50568	54	Al-Sad	الساد
+1	50569	37	Al-Salamat	السلامات
+1	50570	37	Al-Jimi	الجيمي
+1	50571	37	Al-Khibeesi	الخبيصي
+1	50572	51	Al-Qou'	القوع
+1	50573	37	Al-Aamerah	العامرة
+1	50574	37	Al-Maqam	المقام
+1	50575	37	Al-Towayya	الطوية
+1	50576	37	Zakhir	زاخر
+1	50577	37	Mazyad	مزيد
+1	50578	37	Al-Manaseer	المناصير
+1	50579	37	Al-Fou'ah	الفوعة
+1	50580	52	Jebel Hafeet	جبل حفيت
+1	50581	37	Green Mubazzarah	المبزرة الخضراء
+1	50582	37	Al-Jahili	الجاهلي
+1	50583	37	Al-Hili	الهيلي
+1	50584	37	Al-Neyadat	النيادات
+1	50585	37	Al-Dhahir	الظاهر
+1	50586	37	Al-Mu'tarid	المعترض
+1	50587	37	Al-Markhaniyyah	المرخانية
+1	50588	37	Al-Kuwaitat	الكويتات
+1	50589	37	Twam	توام
+1	50590	63	Al-Hiyar	الهير
+1	50591	63	Nahil	ناهل
+1	50592	51	Al-Wagan	الوقن
+1	50593	54	Remah	رماح
+1	50594	37	'Asharij	عشارج
+1	50595	47	Al-Shiwayb	الشويب
+1	50596	43	Al-Dhahrah	الظاهرة
+1	50597	37	Al-Dahmaa'	الدهماء
+1	50598	37	Al-Nabbagh	النباغ
+1	50599	37	Al-Qattarah	القطارة
+1	50600	37	Al-Mas'oudi	المسعودي
+1	50601	37	Falaj Hazza'	فلج هزاع
+1	50602	45	Das Island	جزيرة داس
+1	50603	65	Zerkou Island	جزيرة زركوه
+1	50604	46	Dilma Island	جزيرة دلما
+1	50606	36	Al Reem Island	جزيرة الريم
+1	50607	36	Al Maryah Island	جزيرة المارية
+2	50154	69	Al-Rashidiya Dubai	الراشدية دبي
+2	50175	69	Al-Fahidi	الفهيدي
+2	50315	69	Al-Khawaneej	الخوانيج
+2	50316	69	Nad Al-Sheba	ند الشبا
+2	50317	69	Nad Al-Hamar	ند الحمر
+2	50318	69	Nad Shamma	ند شما
+2	50319	69	Al-Mizhar	المزهر
+2	50320	69	Al-Ruwayyah	الروية
+2	50321	69	Al-Garhoud	القرهود
+2	50322	69	Al-Nahda Dubai	النهدة دبي
+2	50323	69	Oud Metha	عود ميثاء
+2	50324	71	Hatta	حتا
+2	50325	69	Al-Mankhool	المنخول
+2	50326	69	Al-Karama	الكرامة
+2	50327	69	Al-Jaffiliya	الجافلية
+2	50328	69	Al-Hudaiba	الحضيبة
+2	50329	69	Jumeirah	جميرا
+2	50330	69	Al-Bada'	البدع
+2	50331	69	Al-Safa	الصفا
+2	50332	69	Al-Wasl	الوصل
+2	50333	69	Umm Suqeim	أم سقيم
+2	50334	69	Jebel Ali	جبل علي
+2	50335	69	Mushrif	مشرف
+2	50336	69	Naif	نايف
+2	50337	69	Al-Rigga Dubai	الرقة دبي
+2	50338	69	Al-Twar	الطوار
+2	50339	69	Al-Qusais	القصيص
+2	50340	69	Al-Baraha	البراحة
+2	50341	69	Al-Muteena	المطينة
+2	50342	69	Oud Al-Muteena	عود المطينة
+2	50343	69	Hor Al-Anz	هور العنز
+2	50344	69	Abu Hail	أبو هيل
+2	50345	69	Muhaisnah	محيصنة
+2	50346	69	Wadi Al-Amardi	وادي العمردي
+2	50347	69	Wadi Al-Safa	وادي الصفا
+2	50348	69	World Islands	جزر العالم
+2	50349	69	Palm Jumeirah	نخلة جميرا
+2	50350	69	Zabeel	زعبيل
+2	50351	69	Al-Qouz	القوز
+2	50352	69	Al-Manara	المنارة
+2	50353	69	Umm Al Sheif	أم الشيف
+2	50354	69	Al-Sufouh	الصفوح
+2	50355	69	Dubai Marina	مرسى دبي
+2	50356	69	Al-Thanya	الثنية
+2	50357	69	Ras Al-Khor	رأس الخور
+2	50358	69	Al-Warqa	الورقاء
+2	50359	69	Mirdif	مردف
+2	50360	69	Wadi Shabak	وادي شبك
+2	50361	69	Al-Yalayis	اليلايس
+2	50362	69	Saih Shuaib	سيح شعيب
+2	50363	69	Warsan	ورسان
+2	50364	70	Nazwa	نزوى
+2	50365	69	Madinat Hind	مدينة هند
+2	50366	69	Al-Yafrah	اليفره
+2	50367	69	Ghadeer Al-Tair	غدير الطير
+2	50368	69	Al-Wahida	الوحيدة
+2	50369	69	Al-Jaddaf	الجداف
+2	50370	69	Dubai International City	مدينة دبي العالمية
+2	50371	69	Al-Adhba	العذبة
+2	50372	69	Al-Mamzar Dubai	الممزر دبي
+2	50373	69	Al-Awir	العوير
+2	50375	70	Lahbab	لهباب
+2	50376	70	Al-Lisaili	اللسيلي
+2	50377	70	Margham	مرغم
+2	50378	70	Margab	مرقب
+2	50379	70	Al-Faqa'	الفقع
+2	50380	70	Quraitisah	قريطيسة
+2	50381	70	Al-Marmoum	المرموم
+2	50382	70	Sayh Al-Salam	سيح السلم
+3	50145	88	Khor Fakkan	خور فكان
+3	50152	87	Al-Dhaid	الذيد
+3	50383	88	Kalba	كلباء
+3	50384	72	Dibba Al-Hisn	دبا الحصن
+3	50385	91	Al-Hamriya Sharjah	الحمرية
+3	50386	89	Mleiha	مليحة
+3	50387	89	Al-Madam	المدام
+3	50388	87	Al-Batayih	البطائح
+3	50389	91	Al-Azra	العزرة
+3	50390	91	Al-Badee'	البديع
+3	50391	91	Al-Qara'in	القرائن
+3	50392	91	Al-Falaj	الفلج
+3	50393	91	Wasit	واسط
+3	50394	91	Al-Ramaqiyah	الرماقية
+3	50395	91	Al-Rahmaniyah	الرحمانية
+3	50396	91	Helwan	حلوان
+3	50397	91	Al Qasimia	القاسمية
+3	50398	91	Al-Qadisiyah	القادسية
+3	50399	91	Al-Shaghrafa	الشغرافة
+3	50400	91	Al-Zubayr	الزبير
+3	50401	91	Kshisha	كشيشة
+3	50402	91	Al-Juraina	الجرينة
+3	50403	91	Umm Tarfa	أم طرفة
+3	50404	91	Al-Majaz	المجاز
+3	50405	91	Al-Suwaihat	السويحات
+3	50406	91	Muwafja	موافجة
+3	50407	91	Al-Jubail	الجبيل
+3	50408	91	Al-Faihaa'	الفيحاء
+3	50409	91	Al-Jaada	الجادة
+3	50410	91	Al-Hazana	الحزانة
+3	50411	91	Maysaloun	ميسلون
+3	50412	91	Al-Atain	العطين
+3	50413	91	Al-Soor	السور
+3	50414	91	Samnan	سمنان
+3	50415	91	Al-Nasiriyah	الناصرية
+3	50416	91	Al-Fisht	الفشت
+3	50417	91	University City	المدينة الجامعية
+3	50418	91	Al-Darari	الدراري
+3	50419	91	Al-Mirqab	المرقاب
+3	50420	91	Al-Siyouh	السيوح
+3	50421	91	Al-Noaf	النوف
+3	50422	91	Al-Mansoura	المنصورة
+3	50423	91	Al-Zahiah Sharjah	الزاهية الشارقة
+3	50424	91	Al-Ramlah - Sharjah	الرملة الشارقة
+3	50425	91	Al-Riqaibah	الرقيبة
+3	50426	88	Al-Yarmouk	اليرموك
+3	50427	91	Hoshi	حوشي
+3	50428	91	Al-Manakh	المناخ
+3	50429	91	Butina	بوطينة
+3	50430	91	Al-Qulai'ah	القليعة
+3	50431	91	Al-Musalla	المصلى
+3	50432	91	Nakhilat	النخيلات
+3	50433	91	Al-Qasba	القصباء
+3	50434	91	Al-Taawun	التعاون
+3	50435	91	Muwailih	مويلح
+3	50436	91	Al-Mamzar, Sharjah	الممزر الشارقة
+3	50437	91	Al-Khan	الخان
+3	50438	91	Al-Heerah	الحيرة
+3	50439	91	Al-Ramtha	الرمثاء
+3	50440	91	Al-Tai	الطي
+3	50441	91	Al-Sabkha	الصبخة
+3	50442	91	Al-Saj'a	الصجعة
+3	50443	91	Al-Yash	الياش
+3	50444	91	Al-Jazzat	الجزات
+3	50445	91	Al-Naba'a	النباعة
+3	50446	91	Abu Shaghara	أبو شغارة
+3	50447	91	Al-Aabaar	الآبار
+3	50448	91	Al-Rolla	الرولة
+3	50449	91	Al-Majara	المجرة
+3	50450	91	Al-Nahda	النهدة
+3	50451	91	Al-Ghubaiba	الغبيبة
+3	50452	91	Al-Rafa'a	الرفاعة
+3	50453	91	Al-Ghuwair	الغوير
+3	50454	91	Al-Tarfa	الطرفاء
+3	50455	91	Al-Talaa	الطلاع
+3	50456	91	Al-Shahba	الشهباء
+3	50548	92	Sir Bu Na'ir Island	جزيرة صير بو نعير
+3	50605	86	Abu Musa Island	جزيرة أبوموسى
+4	50004	66	Ajman City	إمارة عجمان
+4	50136	68	Mazra'a	مزيرع
+4	50150	66	Al-Hilyu	الحليو
+4	50159	66	Al-Muwayhat	المويهات
+4	50161	66	Mushayrif	مشيرف
+4	50164	66	Al-Nuaimia	النعيمية
+4	50165	66	Al-Hamidiya	الحميدية
+4	50170	66	Al-Sewaan	السوان
+4	50457	66	Al-Zahya Ajman	الزاهية عجمان
+4	50458	66	Al-Owan	الوان
+4	50460	66	Al-Alia	العالية
+4	50461	66	Liwara	ليوارة
+4	50463	66	Al-Bustan	البستان
+4	50464	66	Al-Zawraa	الزوراء
+4	50465	66	Al-Tala	التلة
+4	50466	66	Al-Ramila	الرميلة
+4	50467	66	Al-Rashidiya Ajman	الراشدية عجمان
+4	50468	68	Masfout	مصفوت
+4	50469	66	Al-Jarf	الجرف
+4	50470	66	Al-Raqayeb	الرقايب
+4	50471	66	Al-Safiya	الصفيا
+4	50472	67	Al-Manamah	المنامة
+4	50473	66	Al-Yasmeen	الياسمين
+5	50149	94	Al-Salamah	السلمة
+5	50153	94	Al-Labsah	اللبسة
+5	50156	94	Al-Raafah	الراعفة
+5	50474	94	Al-Bayda	البيضاء
+5	50475	94	Lamaghdar	لمغدر
+5	50476	94	Al-Hawiyah	الحوية
+5	50478	94	Al-Ramla, Umm Al Quwain	الرملة أم القيوين
+5	50479	94	Al-Rigga, Umm Al Quwain	الرقة أم القيوين
+5	50480	94	Falaj Al-Mualla	فلج المعلا
+5	50481	94	Al-Maqta' - Umm Al Quwain	المقطع أم القيوين
+5	50482	94	Al-Rashidiya, Umm Al Quwain	الراشدية أم القيوين
+5	50483	94	Al-Raa'fah	الراعفة
+5	50484	94	Al-Rawdah	الروضة
+5	50485	94	Al-Hamra	الحمره
+5	50486	94	Al-Ras	الراس
+6	50134	82	Al-Mataf	المطاف
+6	50135	82	Al-Kharan	الخران
+6	50151	82	Al-Nakhil	النخيل
+6	50155	82	Al-Araibi	العريبى
+6	50172	82	Khuzam	خزام
+6	50178	82	Al-Maireed	المعيريض
+6	50179	82	Al-Qussaidat	القصيدات
+6	50180	82	Al-Hamraniah	الحمرانية
+6	50487	83	Ghalilah	غليلة
+6	50488	80	Jebel Jais	جبل جيس
+6	50489	82	Al-Fahlain	الفحلين
+6	50490	82	Julphar	جلفار
+6	50491	81	Al-Huwailat	الحويلات
+6	50492	82	Dahhan	دهان
+6	50493	85	Greater Tunb	طنب الكبرى
+6	50494	82	Al-Maamoura	المعمورة
+6	50495	82	Al-Daqdaga	الدقداقة
+6	50496	82	Khatt	خت
+6	50497	84	Masafi Ras Al Khaimah	مسافي رأس الخيمة
+6	50498	83	Al-Jeer	الجير
+6	50499	82	Al-Rams	الرمس
+6	50500	83	Khor Khwair	خور خوير
+6	50501	85	Lesser Tunb	طنب الصغرى
+6	50502	82	Al-Ghub	الغب
+6	50503	84	Difta	دفتا
+6	50504	82	Al-Burairat	البريرات
+6	50505	82	Al-Dhait	الظيت
+6	50506	82	Al-Jazirah Al-Hamra	الجزيرة الحمراء
+6	50507	84	Shokah	شوكة
+6	50508	83	Sha'am	شعم
+7	50137	72	Al-‘Ikkamiyah	العكامية
+7	50171	72	Al-Bidyah	البدية
+7	50174	73	Al-Ghurfah	الغرفة
+7	50176	72	Al-Fqait	الفقيت
+7	50509	75	Masafi Al-Fujairah	مسافي الفجيرة
+7	50510	73	Sakamkam	سكمكم
+7	50511	73	Qidfa	قدفع
+7	50512	72	Dibba Al-Fujairah	دبا الفجيرة
+7	50513	74	Al-Sarm	الصرم
+7	50514	73	Al-Farfar	الفرفار
+7	50515	73	Al-Bathnah	البثنة
+7	50516	73	Safad	صفد
+7	50517	72	Sharm	شرم
+7	50518	73	Al-Faseel	الفصيل
+7	50519	88	Mirbih	مربح
+7	50520	72	Dadna	ضدنا
+7	50521	75	Seeji	سيجي

@@ -36,6 +36,8 @@ dependencies:
   amn_widgets:
     path: packages/amn_widgets
   fluentui_system_icons: ^1.1.273
+  http: ^1.6.0
+  shared_preferences: ^2.5.6
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +60,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    # Official UAE prayer timetable; rebuild with tool/prayer/fetch.py.
+    - assets/prayer/uae.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

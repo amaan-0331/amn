@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'home_page.dart';
 import 'perf_probe.dart';
+import 'prayer/prayer_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +18,11 @@ class AmnApp extends StatelessWidget {
   const AmnApp({super.key});
 
   Route<void> _route(RouteSettings settings) =>
-      widgetConfigRoute(settings) ?? MaterialPageRoute<void>(settings: settings, builder: (_) => const HomePage());
+      widgetConfigRoute(settings) ??
+      switch (settings.name) {
+        '/prayer' => MaterialPageRoute<void>(settings: settings, builder: (_) => const DriftMute(child: PrayerPage())),
+        _ => MaterialPageRoute<void>(settings: settings, builder: (_) => const HomePage()),
+      };
 
   @override
   Widget build(BuildContext context) {
